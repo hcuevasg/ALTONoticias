@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ALTO · Barrido de Prensa — {{FECHA}}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="https://hcuevasg.github.io/ALTONoticias/assets/estilos.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead__inner">
+      <p class="masthead__kicker">Inteligencia de Prensa</p>
+      <h1 class="masthead__titulo">ALTO · Barrido de Prensa</h1>
+      <p class="masthead__fecha">{{FECHA_LARGA}}</p>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <a href="https://hcuevasg.github.io/ALTONoticias/index.html">Edición de hoy</a>
+    <a href="https://hcuevasg.github.io/ALTONoticias/archivo.html">Archivo</a>
+  </nav>
+
+  <main class="diario">
+    {{PORTADA}}
+    {{SECCIONES}}
+  </main>
+
+  <footer class="pie">
+    <div class="pie__inner">
+      <strong>ALTO · Barrido de Prensa</strong><br>
+      Documento de inteligencia de prensa · Uso interno · Zona horaria America/Santiago<br>
+      Edición del {{FECHA}}
+    </div>
+  </footer>
+
+</body>
+</html>

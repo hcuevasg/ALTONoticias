@@ -18,3 +18,8 @@ Thumbs.db
 .clasp.json
 .clasprc.json
 node_modules/
+
+# Previews generados localmente (no son fuente)
+apps-script/correo.html
+preview*.html
+*.preview.html

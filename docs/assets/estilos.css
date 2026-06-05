@@ -123,6 +123,9 @@ body {
   margin: 0 0 10px;
 }
 
+.portada__titular a { color: inherit; text-decoration: none; }
+.portada__titular a:hover { color: var(--acento); }
+
 .portada__bajada {
   font-size: 20px;
   color: var(--tinta-suave);
