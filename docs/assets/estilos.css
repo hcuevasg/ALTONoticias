@@ -1,0 +1,303 @@
+/* =========================================================================
+   ALTO · Barrido de Prensa — Diseño del diario (estático, versionado)
+   Este archivo NO se regenera cada día. Apps Script solo produce el HTML
+   diario con el contenido y enlaza a esta hoja de estilos estable.
+   ========================================================================= */
+
+:root {
+  --tinta:        #1a1a1a;   /* texto principal, casi negro */
+  --tinta-suave:  #4a4a4a;   /* texto secundario */
+  --papel:        #f7f4ec;   /* fondo color papel periódico */
+  --papel-blanco: #fffdf8;   /* tarjetas / columnas */
+  --linea:        #d8d2c4;   /* filetes y separadores */
+  --acento:       #8a1c1c;   /* rojo editorial para detalles */
+  --acento-suave: #f0e3e3;
+  --azul-link:    #1f4e79;
+
+  --serif:  Georgia, "Times New Roman", "Noto Serif", serif;
+  --sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --ancho-max: 1080px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--serif);
+  line-height: 1.55;
+  font-size: 18px;
+}
+
+/* ---------- Cabecera / Masthead ---------------------------------------- */
+
+.masthead {
+  border-bottom: 3px double var(--tinta);
+  background: var(--papel);
+}
+
+.masthead__inner {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 18px 24px 14px;
+  text-align: center;
+}
+
+.masthead__kicker {
+  font-family: var(--sans);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 11px;
+  color: var(--acento);
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.masthead__titulo {
+  font-size: clamp(32px, 6vw, 54px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.masthead__fecha {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--tinta-suave);
+  text-transform: capitalize;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--linea);
+  display: inline-block;
+}
+
+/* ---------- Barra de navegación ---------------------------------------- */
+
+.nav {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--linea);
+}
+
+.nav a {
+  color: var(--tinta);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav a:hover { color: var(--acento); }
+
+/* ---------- Contenedor principal --------------------------------------- */
+
+.diario {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+/* ---------- Titular principal ------------------------------------------ */
+
+.portada {
+  border-bottom: 2px solid var(--tinta);
+  padding-bottom: 24px;
+  margin-bottom: 28px;
+}
+
+.portada__titular {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 10px;
+}
+
+.portada__bajada {
+  font-size: 20px;
+  color: var(--tinta-suave);
+  margin: 0 0 10px;
+}
+
+.portada__fuente {
+  font-family: var(--sans);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--acento);
+}
+
+/* ---------- Secciones --------------------------------------------------- */
+
+.seccion { margin-bottom: 40px; }
+
+.seccion__titulo {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--tinta);
+  margin: 0 0 16px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--acento);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.seccion__titulo::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: var(--acento);
+}
+
+/* Rejilla de artículos en columnas tipo periódico */
+.articulos {
+  column-gap: 32px;
+  columns: 2;
+}
+
+@media (max-width: 640px) {
+  .articulos { columns: 1; }
+}
+
+.articulo {
+  break-inside: avoid;
+  margin: 0 0 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.articulo__titular {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 6px;
+}
+
+.articulo__titular a {
+  color: var(--tinta);
+  text-decoration: none;
+}
+.articulo__titular a:hover { color: var(--acento); text-decoration: underline; }
+
+.articulo__bajada {
+  font-size: 16px;
+  color: var(--tinta-suave);
+  margin: 0 0 8px;
+}
+
+.articulo__meta {
+  font-family: var(--sans);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tinta-suave);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.articulo__fuente { color: var(--azul-link); font-weight: 600; }
+
+/* Etiqueta de cliente (sección monitoreo) */
+.articulo__cliente {
+  background: var(--acento-suave);
+  color: var(--acento);
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 2px;
+}
+
+/* Indicador de relevancia */
+.relevancia { letter-spacing: 1px; color: var(--acento); }
+
+/* ---------- Estado placeholder (Fase 0) -------------------------------- */
+
+.placeholder {
+  text-align: center;
+  padding: 80px 24px;
+  border: 1px dashed var(--linea);
+  background: var(--papel-blanco);
+  margin-top: 32px;
+}
+
+.placeholder h2 {
+  font-size: 26px;
+  margin: 0 0 12px;
+}
+
+.placeholder p {
+  color: var(--tinta-suave);
+  max-width: 520px;
+  margin: 0 auto 8px;
+}
+
+/* ---------- Archivo (histórico de ediciones) --------------------------- */
+
+.archivo-lista { list-style: none; padding: 0; margin: 0; }
+
+.archivo-item {
+  border-bottom: 1px solid var(--linea);
+  padding: 16px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.archivo-item__fecha {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--acento);
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.archivo-item__titulo {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.archivo-item__titulo a { color: var(--tinta); text-decoration: none; }
+.archivo-item__titulo a:hover { color: var(--acento); text-decoration: underline; }
+
+.archivo-vacio {
+  color: var(--tinta-suave);
+  font-style: italic;
+  padding: 32px 0;
+}
+
+/* ---------- Pie ---------------------------------------------------------- */
+
+.pie {
+  border-top: 3px double var(--tinta);
+  margin-top: 48px;
+}
+
+.pie__inner {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 20px 24px 40px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--tinta-suave);
+  text-align: center;
+  line-height: 1.7;
+}
+
+.pie strong { color: var(--tinta); }

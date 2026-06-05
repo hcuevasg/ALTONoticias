@@ -1,0 +1,20 @@
+# Secretos y datos sensibles — NUNCA al repo
+# (los secrets viven en Script Properties; la lista de clientes vive en el Sheet)
+*.local
+.env
+.env.*
+clientes*.csv
+clientes*.json
+secretos*.json
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Apps Script local (clasp), si se usa más adelante
+.clasp.json
+.clasprc.json
+node_modules/

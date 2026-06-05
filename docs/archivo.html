@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archivo · ALTO · Barrido de Prensa</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead__inner">
+      <p class="masthead__kicker">Inteligencia de Prensa</p>
+      <h1 class="masthead__titulo">ALTO · Barrido de Prensa</h1>
+      <p class="masthead__fecha">Archivo de ediciones</p>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <a href="index.html">Edición de hoy</a>
+    <a href="archivo.html">Archivo</a>
+  </nav>
+
+  <main class="diario">
+    <section class="seccion">
+      <h2 class="seccion__titulo">Ediciones publicadas</h2>
+      <ul class="archivo-lista" id="lista">
+        <li class="archivo-vacio">Cargando ediciones…</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="pie__inner">
+      <strong>ALTO · Barrido de Prensa</strong><br>
+      Documento de inteligencia de prensa · Uso interno · Zona horaria America/Santiago
+    </div>
+  </footer>
+
+  <script>
+    // Lee el manifiesto append-only y lista el histórico, de más nuevo a más antiguo.
+    (function () {
+      var lista = document.getElementById('lista');
+
+      function vacio(msg) {
+        lista.innerHTML = '<li class="archivo-vacio">' + msg + '</li>';
+      }
+
+      fetch('ediciones/indice.json', { cache: 'no-store' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (ediciones) {
+          if (!Array.isArray(ediciones) || ediciones.length === 0) {
+            vacio('Todavía no hay ediciones en el archivo.');
+            return;
+          }
+
+          // Orden descendente por fecha (string ISO se ordena lexicográficamente).
+          ediciones.sort(function (a, b) {
+            return (b.fecha || '').localeCompare(a.fecha || '');
+          });
+
+          lista.innerHTML = '';
+          ediciones.forEach(function (ed) {
+            var li = document.createElement('li');
+            li.className = 'archivo-item';
+
+            var fecha = document.createElement('span');
+            fecha.className = 'archivo-item__fecha';
+            fecha.textContent = ed.fecha || '';
+
+            var titulo = document.createElement('span');
+            titulo.className = 'archivo-item__titulo';
+            var a = document.createElement('a');
+            a.href = ed.archivo || ('ediciones/' + ed.fecha + '.html');
+            a.textContent = ed.titulo || ('Edición del ' + ed.fecha);
+            titulo.appendChild(a);
+
+            li.appendChild(fecha);
+            li.appendChild(titulo);
+            lista.appendChild(li);
+          });
+        })
+        .catch(function () {
+          vacio('No se pudo cargar el archivo todavía.');
+        });
+    })();
+  </script>
+
+</body>
+</html>
