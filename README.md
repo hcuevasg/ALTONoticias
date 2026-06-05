@@ -47,7 +47,34 @@ Lo construido hasta ahora:
 - **Fase 0** — Scaffold + /docs estático ✅
 - **Fase 1** — `Fuentes.gs`: fetch RSS + parse + dedup
 - **Fase 2** — `Claude.gs`: prompt + API + JSON válido contra el contrato
-- **Fase 3** — `Render.gs`: JSON → HTML (descarta artículos sin url)
+- **Fase 3** — `Render.gs`: JSON → **dos** HTML (edición completa + correo topado),
+  compartiendo el render por artículo; solo cambia el filtro/tope
 - **Fase 4** — `GitHub.gs`: commit a /docs + append a indice.json
-- **Fase 5** — `Correo.gs`: teaser con MailApp
+- **Fase 5** — `Correo.gs`: **digest completo** (no teaser) con read-time stamp arriba
 - **Fase 6** — `Codigo.gs`: orquestación + trigger diario 7-8am Santiago
+
+## Presupuesto del correo (control determinista del <5 min)
+El correo es el **brief completo del día** (se lee solo), no un teaser. El límite de
+tiempo **no se delega al modelo**: se impone en `Render.gs` con topes editables.
+
+```js
+// Tope al inicio de Render.gs — editable sin tocar lógica
+const TOPE_CORREO = {
+  titular_principal: 1,
+  chile: 3,
+  politica: 3,
+  delictual: 3,
+  clientes: 5            // sección de mayor valor → más espacio
+};
+const MAX_PALABRAS_BAJADA_CORREO = 30;
+```
+
+- Cada sección se ordena por `relevancia` desc y se corta según `TOPE_CORREO`.
+- La bajada se trunca a `MAX_PALABRAS_BAJADA_CORREO` en el render (defensivo),
+  además de pedir bajadas de ~30 palabras en el prompt de Claude.
+- Se calcula **tiempo de lectura** = total_palabras / 200, redondeado, y se muestra
+  arriba: `⏱ Lectura: ~N min`. Es la **señal de calibración**: si sale "~6 min"
+  seguido, se baja un ítem el tope de las secciones amplias y listo.
+- El correo cierra con botón **"Ver edición completa y archivo →"** a Pages (ahí está
+  lo que no entró por los topes).
+- HTML con **estilos inline** (compatibilidad Outlook). Sin CSS externo en el correo.

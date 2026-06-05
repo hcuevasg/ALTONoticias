@@ -1,0 +1,19 @@
+{
+  "name": "alto-barrido-de-prensa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tooling local (clasp) para el proyecto Apps Script del Barrido de Prensa ALTO. El sistema en sí corre en Apps Script + GitHub Pages.",
+  "scripts": {
+    "push": "clasp push",
+    "logs": "clasp tail-logs",
+    "test:fuentes": "clasp run-function test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hcuevasg/ALTONoticias.git"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@google/clasp": "^3.3.0"
+  }
+}
