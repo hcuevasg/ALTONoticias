@@ -25,6 +25,8 @@ function barridoDiario() {
     if (!articulos.length) throw new Error('No se recolectaron titulares.');
     Logger.log('Titulares recolectados: %s', articulos.length);
 
+    articulos = filtrarNoVistos_(articulos);               // Mejora #1: no repetir lo ya publicado
+
     var edicion = generarEdicion(articulos);               // Fase 2
     if (!edicion) throw new Error('No se pudo generar la edición (Claude).');
 
@@ -34,6 +36,9 @@ function barridoDiario() {
     Logger.log('Publicado: %s', res.edicion);
 
     if (!enviarCorreo(edicion)) throw new Error('No se pudo enviar el correo.'); // Fase 5
+
+    registrarPublicados_(edicion);     // Mejora #1: recordar lo ya reportado
+    registrarOportunidades_(edicion);  // Mejora #6: volcar oportunidades al Sheet
 
     var seg = Math.round((new Date() - inicio) / 1000);
     Logger.log('✓ Barrido completado en %s s.', seg);
