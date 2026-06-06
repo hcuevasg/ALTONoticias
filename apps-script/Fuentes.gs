@@ -26,9 +26,10 @@ var CLIENTES_POR_QUERY = 18; // chunk de clientes/alias por query cruzada
 var DIAS_DELICTUAL = 2;
 var DIAS_TENDENCIA = 2;
 var DIAS_CLIENTES  = 2;
-// Filtro de recencia duro: descarta toda nota con fecha de publicación más vieja
-// que esto (el when: de Google News no es estricto y deja pasar notas antiguas).
-var MAX_DIAS_ANTIGUEDAD = 3;
+// Filtro de recencia duro: descarta toda nota cuya fecha de publicación sea más
+// vieja que esto (el when: de Google News no es estricto y deja pasar antiguas).
+// Medido en HORAS desde el momento de la corrida, para que sea exactamente 48 h.
+var MAX_HORAS_ANTIGUEDAD = 48;
 
 function test() {
   Logger.log('=== Prueba de fuentes (taxonomía) ===');
@@ -222,13 +223,13 @@ function parsearRespuesta_(resp, spec) {
   return articulos;
 }
 
-/** true si la nota es reciente (≤ MAX_DIAS_ANTIGUEDAD). Sin fecha legible: se conserva. */
+/** true si la nota es reciente (≤ MAX_HORAS_ANTIGUEDAD). Sin fecha legible: se conserva. */
 function esReciente_(fechaStr) {
   if (!fechaStr) return true;
   var d = new Date(fechaStr);
   if (isNaN(d.getTime())) return true;
-  var dias = (new Date().getTime() - d.getTime()) / 86400000;
-  return dias <= MAX_DIAS_ANTIGUEDAD;
+  var horas = (new Date().getTime() - d.getTime()) / 3600000;
+  return horas <= MAX_HORAS_ANTIGUEDAD;
 }
 
 /** <item>/<entry> → objeto base. REGLA DURA: sin titular o sin url → null. */
