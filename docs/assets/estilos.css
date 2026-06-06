@@ -42,7 +42,7 @@ a { color: inherit; }
 
 /* ---------- Banda roja (cabecera) -------------------------------------- */
 
-.band { background: var(--alto-blue); color: #fff; }
+.band { background: var(--ink); color: #fff; }
 .band__inner {
   max-width: var(--ancho);
   margin: 0 auto;

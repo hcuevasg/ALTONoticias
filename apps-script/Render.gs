@@ -272,8 +272,8 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
     '<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center">',
     '<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#ffffff;">',
 
-    // Banda azul corporativa con logo + meta.
-    '<tr><td style="background:' + C_BLUE + ';padding:22px 30px;">',
+    // Banda oscura (igual que el pie) con logo + meta.
+    '<tr><td style="background:' + C_INK + ';padding:22px 30px;">',
     '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
     '    <td align="left" style="vertical-align:middle;"><span style="background:#fff;border-radius:4px;padding:9px 13px;display:inline-block;"><img src="' + LOGO_URL + '" alt="ALTO" height="24" style="height:24px;width:auto;display:block;"></span></td>',
     '    <td align="right" style="vertical-align:middle;font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;line-height:1.7;">Barrido de Prensa · Boletín<br><b style="font-weight:600;">Edición · ' + escaparHtml_(edicion.fecha) + '</b><br>⏱ Lectura ~' + minutos + ' min</td>',
