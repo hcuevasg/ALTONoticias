@@ -23,3 +23,5 @@ node_modules/
 apps-script/correo.html
 preview*.html
 *.preview.html
+docs/preview-edicion.html
+docs/preview-correo.html

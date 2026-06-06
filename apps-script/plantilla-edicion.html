@@ -5,15 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ALTO · Barrido de Prensa — {{FECHA}}</title>
   <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://hcuevasg.github.io/ALTONoticias/assets/estilos.css">
 </head>
 <body>
 
-  <header class="masthead">
-    <div class="masthead__inner">
-      <p class="masthead__kicker">Inteligencia de Prensa</p>
-      <h1 class="masthead__titulo">ALTO · Barrido de Prensa</h1>
-      <p class="masthead__fecha">{{FECHA_LARGA}}</p>
+  <header class="band">
+    <div class="band__inner">
+      <span class="band__logo"><img src="https://hcuevasg.github.io/ALTONoticias/assets/alto-logo.png" alt="ALTO"></span>
+      <div class="band__meta">
+        Barrido de Prensa · Diario<br>
+        <b>Edición · {{FECHA}}</b>
+      </div>
     </div>
   </header>
 
@@ -22,16 +27,17 @@
     <a href="https://hcuevasg.github.io/ALTONoticias/archivo.html">Archivo</a>
   </nav>
 
-  <main class="diario">
+  <main>
     {{PORTADA}}
-    {{SECCIONES}}
+    <div class="diario">
+      {{SECCIONES}}
+    </div>
   </main>
 
   <footer class="pie">
     <div class="pie__inner">
-      <strong>ALTO · Barrido de Prensa</strong><br>
-      Documento de inteligencia de prensa · Uso interno · Zona horaria America/Santiago<br>
-      Edición del {{FECHA}}
+      <span><b>ALTO</b> · Barrido de Prensa</span>
+      <span class="tag">{{FECHA_LARGA}} · Uso interno</span>
     </div>
   </footer>
 

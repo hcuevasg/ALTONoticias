@@ -4,11 +4,23 @@ Sistema desatendido que cada mañana (zona horaria **America/Santiago**) genera 
 "diario" de inteligencia de prensa, lo publica en **GitHub Pages** y envía un
 correo-teaser al cliente con el link a la edición del día.
 
-## Secciones fijas del diario
-1. Chile en los últimos días
-2. Política — Chile y el mundo
-3. Tendencias delictuales
-4. Monitoreo de clientes (lista predeterminada, sensible)
+## Dos productos
+- **Diario de prensa** (público en Pages): Chile en los últimos días · Política — Chile
+  y el mundo · Tendencias delictuales.
+- **Boletín de Inteligencia ALTO** (solo en el correo, privado): clientes afectados con
+  oportunidad comercial, nuevos modus operandi, y riesgo por industria.
+
+## Modelo de embudo (detección → clasificación → oportunidad)
+- **Nivel 1 · Detección (Fuentes.gs):** taxonomía en el Sheet. En vez de 1 búsqueda por
+  cliente (no escala), se cruzan **clientes × amenazas por industria** en queries booleanas
+  de Google News (`("Walmart" OR "Líder") (robo OR fraude)`), más temas delictuales y
+  tendencias/MO. ~10-20 fetches cubren cientos de clientes.
+- **Nivel 2 · Clasificación (Claude.gs):** filtra relevancia, atribuye el cliente (vía alias),
+  descarta falsos positivos.
+- **Nivel 3 · Oportunidad comercial (Claude.gs):** por cada hallazgo, el servicio ALTO a
+  ofrecer. Convierte inteligencia en venta consultiva.
+- Diseño visual: identidad de marca ALTO (rojo #E84244, azul #4174B9, Archivo + IBM Plex),
+  dirección **Editorial Bold**.
 
 ## Arquitectura (dos runtimes)
 - **Apps Script = cerebro.** Trigger temporal diario. Lee config (Google Sheet),
@@ -35,9 +47,14 @@ correo-teaser al cliente con el link a la edición del día.
 ## Estado: COMPLETO ✅ (Fases 0–6, sistema autónomo)
 El barrido corre solo cada mañana (7–8 am America/Santiago) vía trigger temporal.
 
+El Sheet de fuentes tiene 5 pestañas: `Clientes` (nombre·industria·alias), `Amenazas`
+(industria·términos), `Tendencias`, `FuentesGenerales`, `TemasDelictuales`. La lista de
+clientes vive SOLO en el Sheet, nunca en el repo. El boletín (clientes) va SOLO al correo,
+nunca a Pages (privacidad).
+
 Módulos de `apps-script/` (se despliegan a mano en script.google.com — ver nota clasp):
-- `Fuentes.gs` — fetch RSS + parse (XmlService) + dedup por URL.
-- `Claude.gs` — 1 llamada a la API (claude-sonnet-4-6), anti-alucinación por id.
+- `Fuentes.gs` — lee el Sheet, arma queries cruzadas, fetch RSS paralelo (fetchAll), dedup.
+- `Claude.gs` — 1 llamada (claude-sonnet-4-6), embudo N2-N3, anti-alucinación por id.
 - `Render.gs` — JSON → 2 HTML (edición completa + correo topado), presupuesto del correo.
 - `GitHub.gs` — publica index.html + ediciones/FECHA.html + indice.json vía API.
 - `Correo.gs` — envía el digest con MailApp.

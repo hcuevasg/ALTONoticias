@@ -5,15 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Archivo · ALTO · Barrido de Prensa</title>
   <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
 
-  <header class="masthead">
-    <div class="masthead__inner">
-      <p class="masthead__kicker">Inteligencia de Prensa</p>
-      <h1 class="masthead__titulo">ALTO · Barrido de Prensa</h1>
-      <p class="masthead__fecha">Archivo de ediciones</p>
+  <header class="band">
+    <div class="band__inner">
+      <span class="band__logo"><img src="assets/alto-logo.png" alt="ALTO"></span>
+      <div class="band__meta">
+        Barrido de Prensa · Diario<br>
+        <b>Archivo de ediciones</b>
+      </div>
     </div>
   </header>
 
@@ -22,19 +27,21 @@
     <a href="archivo.html">Archivo</a>
   </nav>
 
-  <main class="diario">
-    <section class="seccion">
-      <h2 class="seccion__titulo">Ediciones publicadas</h2>
-      <ul class="archivo-lista" id="lista">
-        <li class="archivo-vacio">Cargando ediciones…</li>
-      </ul>
-    </section>
+  <main class="hero" style="padding-bottom:8px;">
+    <p class="kick">Archivo</p>
+    <h1 style="font-size:clamp(28px,5vw,44px);">Ediciones publicadas</h1>
   </main>
+
+  <div class="diario">
+    <ul class="archivo-lista" id="lista">
+      <li class="archivo-vacio">Cargando ediciones…</li>
+    </ul>
+  </div>
 
   <footer class="pie">
     <div class="pie__inner">
-      <strong>ALTO · Barrido de Prensa</strong><br>
-      Documento de inteligencia de prensa · Uso interno · Zona horaria America/Santiago
+      <span><b>ALTO</b> · Barrido de Prensa</span>
+      <span class="tag">Uso interno · America/Santiago</span>
     </div>
   </footer>
 
@@ -42,51 +49,34 @@
     // Lee el manifiesto append-only y lista el histórico, de más nuevo a más antiguo.
     (function () {
       var lista = document.getElementById('lista');
-
-      function vacio(msg) {
-        lista.innerHTML = '<li class="archivo-vacio">' + msg + '</li>';
-      }
+      function vacio(msg) { lista.innerHTML = '<li class="archivo-vacio">' + msg + '</li>'; }
 
       fetch('ediciones/indice.json', { cache: 'no-store' })
-        .then(function (r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.json();
-        })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(function (ediciones) {
           if (!Array.isArray(ediciones) || ediciones.length === 0) {
-            vacio('Todavía no hay ediciones en el archivo.');
-            return;
+            vacio('Todavía no hay ediciones en el archivo.'); return;
           }
-
-          // Orden descendente por fecha (string ISO se ordena lexicográficamente).
-          ediciones.sort(function (a, b) {
-            return (b.fecha || '').localeCompare(a.fecha || '');
-          });
-
+          ediciones.sort(function (a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
           lista.innerHTML = '';
           ediciones.forEach(function (ed) {
             var li = document.createElement('li');
             li.className = 'archivo-item';
-
             var fecha = document.createElement('span');
             fecha.className = 'archivo-item__fecha';
             fecha.textContent = ed.fecha || '';
-
             var titulo = document.createElement('span');
             titulo.className = 'archivo-item__titulo';
             var a = document.createElement('a');
             a.href = ed.archivo || ('ediciones/' + ed.fecha + '.html');
             a.textContent = ed.titulo || ('Edición del ' + ed.fecha);
             titulo.appendChild(a);
-
             li.appendChild(fecha);
             li.appendChild(titulo);
             lista.appendChild(li);
           });
         })
-        .catch(function () {
-          vacio('No se pudo cargar el archivo todavía.');
-        });
+        .catch(function () { vacio('No se pudo cargar el archivo todavía.'); });
     })();
   </script>
 

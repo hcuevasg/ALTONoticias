@@ -17,12 +17,23 @@ var TOPE_CORREO = {
   titular_principal: 1,
   chile: 3,
   politica: 3,
-  delictual: 3,
-  clientes: 5            // sección de mayor valor → más espacio
+  delictual: 3
 };
 var MAX_PALABRAS_BAJADA_CORREO = 30;
 
+// Topes del boletín ALTO (lo de mayor valor → más espacio).
+var TOPE_BOLETIN_CLIENTES = 10;
+var TOPE_BOLETIN_MO = 5;
+
 var BASE_PAGES = 'https://hcuevasg.github.io/ALTONoticias';
+var LOGO_URL   = BASE_PAGES + '/assets/alto-logo.png';
+
+// Paleta de marca ALTO + stacks de fuente para el correo (caen a web-safe).
+var C_RED = '#E84244', C_BLUE = '#4174B9', C_GREY = '#B0B6B8';
+var C_INK = '#15181D', C_INK2 = '#4A4F57', C_INK3 = '#7C828B', C_LINE = '#E1DDD4';
+var F_DISP = "Archivo,'Helvetica Neue',Arial,sans-serif";
+var F_MONO = "'IBM Plex Mono','Courier New',monospace";
+var F_BODY = "'IBM Plex Sans',Arial,sans-serif";
 
 // ======================================================================
 //  EDICIÓN COMPLETA (Pages)
@@ -47,32 +58,34 @@ function renderEdicion(edicion) {
   return html;
 }
 
-/** Bloque de portada (titular principal). */
+/** Hero de portada (titular principal). */
 function renderPortada_(tp) {
   if (!tp || !tp.url) return '';
   return [
-    '<div class="portada">',
-    '  <h2 class="portada__titular"><a href="' + escaparHtml_(tp.url) + '">' + escaparHtml_(tp.titular) + '</a></h2>',
-    '  <p class="portada__bajada">' + escaparHtml_(tp.bajada) + '</p>',
-    '  <p class="portada__fuente">' + escaparHtml_(tp.fuente) + '</p>',
-    '</div>'
+    '<section class="hero">',
+    '  <p class="kick">Inteligencia de Prensa</p>',
+    '  <h1><a href="' + escaparHtml_(tp.url) + '">' + escaparHtml_(tp.titular) + '</a></h1>',
+    '  <p class="hero__bajada">' + escaparHtml_(tp.bajada) + '</p>',
+    '  <p class="hero__fuente">' + escaparHtml_(tp.fuente) + '</p>',
+    '</section>'
   ].join('\n');
 }
 
-/** Todas las secciones con artículos (las vacías se omiten). */
+/** Todas las secciones con artículos (las vacías y clientes se omiten). */
 function renderSecciones_(secciones) {
   var bloques = [];
   for (var s = 0; s < secciones.length; s++) {
     var sec = secciones[s];
+    if (sec.id === 'clientes') continue;   // privacidad: clientes solo en el correo, nunca en Pages
     if (!sec.articulos || !sec.articulos.length) continue;
 
     var arts = [];
     for (var a = 0; a < sec.articulos.length; a++) {
-      arts.push(renderArticuloEdicion_(sec.articulos[a], sec.id === 'clientes'));
+      arts.push(renderArticuloEdicion_(sec.articulos[a]));
     }
     bloques.push([
       '<section class="seccion">',
-      '  <h2 class="seccion__titulo">' + escaparHtml_(sec.titulo) + '</h2>',
+      '  <h2 class="seclbl">' + escaparHtml_(sec.titulo) + '</h2>',
       '  <div class="articulos">',
       arts.join('\n'),
       '  </div>',
@@ -83,19 +96,16 @@ function renderSecciones_(secciones) {
 }
 
 /** Un artículo en la edición completa (bajada sin truncar). */
-function renderArticuloEdicion_(art, esCliente) {
-  var meta = ['<span class="articulo__fuente">' + escaparHtml_(art.fuente) + '</span>'];
-  if (esCliente && art.cliente) {
-    meta.push('<span class="articulo__cliente">' + escaparHtml_(art.cliente) + '</span>');
-  }
+function renderArticuloEdicion_(art) {
+  var meta = ['<span class="art__fuente">' + escaparHtml_(art.fuente) + '</span>'];
   if (art.fecha) meta.push('<span>' + escaparHtml_(art.fecha) + '</span>');
   meta.push('<span class="relevancia">' + puntosRelevancia_(art.relevancia) + '</span>');
 
   return [
-    '<article class="articulo">',
-    '  <h3 class="articulo__titular"><a href="' + escaparHtml_(art.url) + '">' + escaparHtml_(art.titular) + '</a></h3>',
-    '  <p class="articulo__bajada">' + escaparHtml_(art.bajada) + '</p>',
-    '  <p class="articulo__meta">' + meta.join('\n    ') + '</p>',
+    '<article class="art">',
+    '  <h3 class="art__titular"><a href="' + escaparHtml_(art.url) + '">' + escaparHtml_(art.titular) + '</a></h3>',
+    '  <p class="art__bajada">' + escaparHtml_(art.bajada) + '</p>',
+    '  <p class="art__meta">' + meta.join(' ') + '</p>',
     '</article>'
   ].join('\n');
 }
@@ -134,86 +144,180 @@ function renderCorreo(edicion) {
     seccionesCorreo.push({ titulo: sec.titulo, arts: arts });
   }
 
+  // Boletín ALTO: topar clientes/MO; el riesgo va completo.
+  var bol = edicion.boletin || { clientes_afectados: [], nuevos_modus_operandi: [], riesgo_por_industria: [] };
+  var boletin = {
+    clientes: (bol.clientes_afectados || []).slice(0, TOPE_BOLETIN_CLIENTES),
+    modus: (bol.nuevos_modus_operandi || []).slice(0, TOPE_BOLETIN_MO),
+    riesgo: bol.riesgo_por_industria || []
+  };
+  boletin.clientes.forEach(function (c) {
+    palabras += contarPalabras_(c.titular) + contarPalabras_(c.impacto) + contarPalabras_(c.oportunidad_comercial);
+  });
+  boletin.modus.forEach(function (m) { palabras += contarPalabras_(m.descripcion); });
+
   var minutos = Math.max(1, Math.round(palabras / 200));
   var edicionUrl = BASE_PAGES + '/ediciones/' + encodeURIComponent(edicion.fecha) + '.html';
 
-  var html = construirHtmlCorreo_(edicion, seccionesCorreo, minutos, edicionUrl);
+  var html = construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicionUrl);
   return { html: html, minutos: minutos, palabras: palabras };
 }
 
 /** Arma el HTML del correo con estilos inline (compatibilidad Outlook). */
-function construirHtmlCorreo_(edicion, seccionesCorreo, minutos, edicionUrl) {
+function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicionUrl) {
   var tp = edicion.titular_principal;
 
   var cuerpo = [];
 
-  // Portada del correo.
+  // BOLETÍN ALTO primero (lo de mayor valor para el lector comercial/interno).
+  cuerpo.push(renderBoletinCorreo_(boletin));
+
+  // Diario de prensa.
+  cuerpo.push(headingCorreo_('Diario de prensa'));
+
+  // Portada del correo (titular principal).
   cuerpo.push(
-    '<div style="border-bottom:2px solid #1a1a1a;padding-bottom:18px;margin-bottom:8px;">' +
-      '<a href="' + escaparHtml_(tp.url) + '" style="color:#1a1a1a;text-decoration:none;">' +
-        '<div style="font-size:24px;font-weight:bold;line-height:1.2;">' + escaparHtml_(tp.titular) + '</div>' +
+    '<div style="padding-bottom:20px;margin-bottom:6px;border-bottom:1.5px solid ' + C_INK + ';">' +
+      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">Inteligencia de Prensa</div>' +
+      '<a href="' + escaparHtml_(tp.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
+        '<div style="font-family:' + F_DISP + ';font-size:27px;font-weight:800;line-height:1.04;letter-spacing:-.02em;">' + escaparHtml_(tp.titular) + '</div>' +
       '</a>' +
-      '<div style="font-size:16px;color:#4a4a4a;margin-top:8px;">' + escaparHtml_(tp.bajada) + '</div>' +
-      '<div style="font-family:Arial,sans-serif;font-size:11px;color:#8a1c1c;text-transform:uppercase;letter-spacing:.06em;margin-top:8px;">' + escaparHtml_(tp.fuente) + '</div>' +
+      '<div style="font-family:' + F_BODY + ';font-size:15px;line-height:1.45;color:' + C_INK2 + ';margin-top:9px;">' + escaparHtml_(tp.bajada) + '</div>' +
+      '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;letter-spacing:.1em;margin-top:9px;">' + escaparHtml_(tp.fuente) + '</div>' +
     '</div>'
   );
 
-  // Secciones topadas.
+  // Secciones topadas del diario.
   for (var s = 0; s < seccionesCorreo.length; s++) {
     var sec = seccionesCorreo[s];
-    cuerpo.push(
-      '<div style="font-family:Arial,sans-serif;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:.12em;color:#1a1a1a;border-bottom:2px solid #8a1c1c;padding-bottom:6px;margin:26px 0 14px;">' +
-      escaparHtml_(sec.titulo) + '</div>'
-    );
+    cuerpo.push(seclblCorreo_(sec.titulo));
     for (var a = 0; a < sec.arts.length; a++) {
       var item = sec.arts[a];
-      var metaCorreo = escaparHtml_(item.art.fuente);
-      if (item.esCliente && item.art.cliente) {
-        metaCorreo += ' · <strong style="color:#8a1c1c;">' + escaparHtml_(item.art.cliente) + '</strong>';
-      }
       cuerpo.push(
-        '<div style="margin-bottom:16px;">' +
-          '<a href="' + escaparHtml_(item.art.url) + '" style="color:#1a1a1a;text-decoration:none;">' +
-            '<div style="font-size:17px;font-weight:bold;line-height:1.25;">' + escaparHtml_(item.art.titular) + '</div>' +
+        '<div style="margin-bottom:15px;">' +
+          '<a href="' + escaparHtml_(item.art.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
+            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;">' + escaparHtml_(item.art.titular) + '</div>' +
           '</a>' +
-          '<div style="font-size:14px;color:#4a4a4a;margin-top:4px;">' + escaparHtml_(item.bajada) + '</div>' +
-          '<div style="font-family:Arial,sans-serif;font-size:11px;color:#1f4e79;margin-top:4px;">' + metaCorreo + '</div>' +
+          '<div style="font-family:' + F_BODY + ';font-size:13.5px;color:' + C_INK2 + ';margin-top:4px;line-height:1.4;">' + escaparHtml_(item.bajada) + '</div>' +
+          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + '</div>' +
         '</div>'
       );
     }
   }
 
   return [
-    '<div style="background:#f7f4ec;padding:24px 0;font-family:Georgia,\'Times New Roman\',serif;color:#1a1a1a;margin:0;">',
+    '<div style="background:#E7E3DB;padding:26px 0;margin:0;">',
     '<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center">',
-    '<table width="600" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;background:#fffdf8;border:1px solid #d8d2c4;">',
+    '<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#ffffff;">',
 
-    // Cabecera con sello de lectura.
-    '<tr><td style="padding:24px 28px;border-bottom:3px double #1a1a1a;text-align:center;">',
-    '  <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:.25em;color:#8a1c1c;font-weight:bold;text-transform:uppercase;">Inteligencia de Prensa</div>',
-    '  <div style="font-size:30px;font-weight:bold;margin-top:4px;">ALTO · Barrido de Prensa</div>',
-    '  <div style="font-family:Arial,sans-serif;font-size:12px;color:#4a4a4a;margin-top:8px;">' + escaparHtml_(fechaLarga_(edicion.fecha)) + ' &nbsp;·&nbsp; ⏱ Lectura: ~' + minutos + ' min</div>',
+    // Banda roja con logo + meta.
+    '<tr><td style="background:' + C_RED + ';padding:22px 30px;">',
+    '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
+    '    <td align="left" style="vertical-align:middle;"><span style="background:#fff;border-radius:4px;padding:9px 13px;display:inline-block;"><img src="' + LOGO_URL + '" alt="ALTO" height="24" style="height:24px;width:auto;display:block;"></span></td>',
+    '    <td align="right" style="vertical-align:middle;font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;line-height:1.7;">Barrido de Prensa · Boletín<br><b style="font-weight:600;">Edición · ' + escaparHtml_(edicion.fecha) + '</b><br>⏱ Lectura ~' + minutos + ' min</td>',
+    '  </tr></table>',
     '</td></tr>',
 
     // Cuerpo.
-    '<tr><td style="padding:24px 28px;">',
+    '<tr><td style="padding:28px 30px 8px;">',
     cuerpo.join('\n'),
     '</td></tr>',
 
     // Botón a la edición completa.
-    '<tr><td style="padding:4px 28px 28px;text-align:center;">',
-    '  <a href="' + escaparHtml_(edicionUrl) + '" style="display:inline-block;background:#8a1c1c;color:#fffdf8;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;padding:12px 22px;border-radius:3px;">Ver edición completa y archivo →</a>',
+    '<tr><td style="padding:14px 30px 30px;">',
+    '  <a href="' + escaparHtml_(edicionUrl) + '" style="display:inline-block;background:' + C_RED + ';color:#ffffff;font-family:' + F_MONO + ';font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:13px 22px;">Ver edición completa y archivo →</a>',
     '</td></tr>',
 
-    // Pie.
-    '<tr><td style="padding:16px 28px 28px;border-top:1px solid #d8d2c4;font-family:Arial,sans-serif;font-size:11px;color:#4a4a4a;text-align:center;line-height:1.6;">',
-    '  <strong>ALTO · Barrido de Prensa</strong><br>Documento de inteligencia de prensa · Uso interno',
+    // Pie oscuro.
+    '<tr><td style="background:' + C_INK + ';padding:16px 30px;">',
+    '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
+    '    <td align="left" style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;"><b style="color:' + C_RED + ';">ALTO</b> · Barrido de Prensa</td>',
+    '    <td align="right" style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:' + C_GREY + ';">Uso interno</td>',
+    '  </tr></table>',
     '</td></tr>',
 
     '</table>',
     '</td></tr></table>',
     '</div>'
   ].join('\n');
+}
+
+/** Bloque del boletín ALTO (riesgo + clientes afectados + nuevos MO). */
+function renderBoletinCorreo_(boletin) {
+  if (!boletin || (!boletin.clientes.length && !boletin.modus.length && !boletin.riesgo.length)) return '';
+
+  var bloques = [seclblCorreo_('Boletín de Inteligencia ALTO')];
+
+  // Riesgo por industria (semáforo).
+  if (boletin.riesgo.length) {
+    var chips = boletin.riesgo.map(function (r) {
+      var c = colorRiesgo_(r.nivel);
+      return '<span style="display:inline-block;background:' + c.bg + ';color:' + c.fg +
+        ';font-family:' + F_MONO + ';font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;margin:0 6px 7px 0;">' +
+        escaparHtml_(r.industria) + ' · ' + escaparHtml_(r.nivel) + '</span>';
+    }).join('');
+    bloques.push('<div style="margin-bottom:20px;">' + chips + '</div>');
+  }
+
+  // Clientes afectados.
+  if (boletin.clientes.length) {
+    bloques.push(subLabelCorreo_('Clientes afectados hoy (' + boletin.clientes.length + ')'));
+    boletin.clientes.forEach(function (c) {
+      var enc = escaparHtml_(c.cliente);
+      if (c.industria) enc += ' · ' + escaparHtml_(c.industria);
+      if (c.tipo_amenaza) enc += ' · ' + escaparHtml_(c.tipo_amenaza);
+      bloques.push(
+        '<div style="border-left:3px solid ' + C_RED + ';padding-left:13px;margin-bottom:18px;">' +
+          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;font-weight:bold;letter-spacing:.08em;">' + enc + '</div>' +
+          '<a href="' + escaparHtml_(c.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
+            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;margin-top:4px;">' + escaparHtml_(c.titular) + '</div>' +
+          '</a>' +
+          (c.impacto ? '<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_INK2 + ';margin-top:5px;line-height:1.4;">' + escaparHtml_(c.impacto) + '</div>' : '') +
+          (c.oportunidad_comercial ? '<div style="background:#EEF3FB;border-left:2px solid ' + C_BLUE + ';padding:9px 12px;margin-top:8px;font-family:' + F_BODY + ';font-size:12.5px;color:' + C_INK + ';line-height:1.4;"><b style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:' + C_BLUE + ';">Oportunidad comercial</b><br>' + escaparHtml_(c.oportunidad_comercial) + '</div>' : '') +
+        '</div>'
+      );
+    });
+  }
+
+  // Nuevos modus operandi.
+  if (boletin.modus.length) {
+    bloques.push(subLabelCorreo_('Nuevos modus operandi'));
+    boletin.modus.forEach(function (m) {
+      bloques.push(
+        '<div style="margin-bottom:10px;padding-left:16px;position:relative;font-family:' + F_BODY + ';font-size:13.5px;line-height:1.42;color:' + C_INK + ';">' +
+          '<span style="color:' + C_RED + ';font-size:11px;position:absolute;left:0;top:1px;">&#9650;</span>' +
+          '<a href="' + escaparHtml_(m.url) + '" style="color:' + C_INK + ';text-decoration:none;">' + escaparHtml_(m.descripcion) + '</a>' +
+        '</div>'
+      );
+    });
+  }
+
+  return bloques.join('\n');
+}
+
+/** Etiqueta de sección del correo (filete superior ink + barra roja, mono). */
+function seclblCorreo_(texto) {
+  return '<div style="font-family:' + F_MONO + ';font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + C_RED +
+    ';font-weight:bold;margin:26px 0 14px;border-top:1.5px solid ' + C_INK + ';padding-top:13px;">' +
+    '<span style="display:inline-block;width:16px;height:2px;background:' + C_RED + ';vertical-align:middle;margin-right:8px;"></span>' +
+    escaparHtml_(texto) + '</div>';
+}
+// Compat: el nombre anterior sigue funcionando.
+function headingCorreo_(texto) { return seclblCorreo_(texto); }
+
+/** Sub-etiqueta mono (dentro de una sección). */
+function subLabelCorreo_(texto) {
+  return '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:' + C_INK2 +
+    ';font-weight:600;margin:6px 0 13px;">' + escaparHtml_(texto) + '</div>';
+}
+
+/** Color del chip de riesgo según nivel (paleta ALTO). */
+function colorRiesgo_(nivel) {
+  var n = String(nivel || '').toLowerCase();
+  if (n.indexOf('alto') !== -1)  return { bg: '#FBE0E0', fg: C_RED };
+  if (n.indexOf('medio') !== -1) return { bg: '#F5ECD6', fg: '#9A7A16' };
+  if (n.indexOf('bajo') !== -1)  return { bg: '#E6EEF7', fg: C_BLUE };
+  return { bg: '#ECEAE3', fg: C_INK2 };
 }
 
 // ======================================================================
@@ -234,8 +338,8 @@ function testRender() {
   // --- Edición completa ---
   var htmlEdicion = renderEdicion(edicion);
   Logger.log('— Edición completa: %s caracteres', htmlEdicion.length);
-  afirmar_('masthead presente', htmlEdicion.indexOf('class="masthead"') !== -1);
-  afirmar_('portada presente', htmlEdicion.indexOf('class="portada"') !== -1);
+  afirmar_('banda roja presente', htmlEdicion.indexOf('class="band"') !== -1);
+  afirmar_('hero presente', htmlEdicion.indexOf('class="hero"') !== -1);
   afirmar_('sin placeholders sin reemplazar', htmlEdicion.indexOf('{{') === -1);
   for (var s = 0; s < edicion.secciones.length; s++) {
     var sec = edicion.secciones[s];
