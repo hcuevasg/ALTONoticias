@@ -42,7 +42,7 @@ a { color: inherit; }
 
 /* ---------- Banda roja (cabecera) -------------------------------------- */
 
-.band { background: var(--alto-red); color: #fff; }
+.band { background: var(--alto-blue); color: #fff; }
 .band__inner {
   max-width: var(--ancho);
   margin: 0 auto;
@@ -171,6 +171,90 @@ a { color: inherit; }
 }
 .art__fuente { color: var(--alto-blue); font-weight: 600; }
 .relevancia { color: var(--alto-red); letter-spacing: 1.5px; }
+
+/* ---------- Boletín de Inteligencia ALTO (en Pages) -------------------- */
+
+.riesgo { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+}
+.chip--alto  { background: #FBE0E0; color: var(--alto-red); }
+.chip--medio { background: #F5ECD6; color: #9A7A16; }
+.chip--bajo  { background: #E6EEF7; color: var(--alto-blue); }
+
+.sublbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+  margin: 8px 0 14px;
+}
+
+.cliente {
+  border-left: 3px solid var(--alto-red);
+  padding-left: 14px;
+  margin-bottom: 20px;
+}
+.cliente__cab {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--alto-red);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.cliente__titular { font-size: 18px; font-weight: 700; line-height: 1.2; margin-top: 4px; }
+.cliente__titular a { text-decoration: none; }
+.cliente__titular a:hover { color: var(--alto-red); }
+.cliente__impacto { font-size: 13.5px; color: var(--ink-2); margin-top: 5px; line-height: 1.45; }
+.oportunidad {
+  background: #EEF3FB;
+  border-left: 2px solid var(--alto-blue);
+  padding: 10px 13px;
+  margin-top: 9px;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.45;
+}
+.oportunidad b {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--alto-blue);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.mo { list-style: none; margin: 0; padding: 0; }
+.mo li {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  padding: 8px 0 8px 18px;
+  position: relative;
+  border-top: 1px solid var(--line);
+}
+.mo li:first-child { border-top: 0; }
+.mo li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 13px;
+  width: 7px;
+  height: 7px;
+  background: var(--alto-red);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.mo a { text-decoration: none; }
+.mo a:hover { color: var(--alto-red); }
 
 /* ---------- Pie oscuro -------------------------------------------------- */
 

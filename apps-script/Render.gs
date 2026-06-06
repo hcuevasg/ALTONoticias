@@ -55,7 +55,69 @@ function renderEdicion(edicion) {
   html = reemplazar_(html, '{{FECHA_LARGA}}', escaparHtml_(fechaLarga_(edicion.fecha)));
   html = reemplazar_(html, '{{PORTADA}}', renderPortada_(edicion.titular_principal));
   html = reemplazar_(html, '{{SECCIONES}}', renderSecciones_(edicion.secciones));
+  html = reemplazar_(html, '{{BOLETIN}}', renderBoletinEdicion_(edicion.boletin));
   return html;
+}
+
+/**
+ * Boletín de Inteligencia ALTO para Pages (clientes afectados + MO + riesgo).
+ * Muestra TODO (sin topes; los topes son solo del correo). Devuelve '' si vacío.
+ */
+function renderBoletinEdicion_(boletin) {
+  if (!boletin) return '';
+  var clientes = boletin.clientes_afectados || [];
+  var modus = boletin.nuevos_modus_operandi || [];
+  var riesgo = boletin.riesgo_por_industria || [];
+  if (!clientes.length && !modus.length && !riesgo.length) return '';
+
+  var bloques = ['<section class="seccion">', '  <h2 class="seclbl">Boletín de Inteligencia ALTO</h2>'];
+
+  // Semáforo de riesgo.
+  if (riesgo.length) {
+    var chips = riesgo.map(function (r) {
+      return '<span class="chip ' + chipClaseRiesgo_(r.nivel) + '">' +
+        escaparHtml_(r.industria) + ' · ' + escaparHtml_(r.nivel) + '</span>';
+    }).join('');
+    bloques.push('  <div class="riesgo">' + chips + '</div>');
+  }
+
+  // Clientes afectados (todos).
+  if (clientes.length) {
+    bloques.push('  <p class="sublbl">Clientes afectados · últimas 48 h (' + clientes.length + ')</p>');
+    clientes.forEach(function (c) {
+      var cab = escaparHtml_(c.cliente);
+      if (c.industria) cab += ' · ' + escaparHtml_(c.industria);
+      if (c.tipo_amenaza) cab += ' · ' + escaparHtml_(c.tipo_amenaza);
+      bloques.push(
+        '  <div class="cliente">' +
+          '<p class="cliente__cab">' + cab + '</p>' +
+          '<h3 class="cliente__titular"><a href="' + escaparHtml_(c.url) + '">' + escaparHtml_(c.titular) + '</a></h3>' +
+          (c.impacto ? '<p class="cliente__impacto">' + escaparHtml_(c.impacto) + '</p>' : '') +
+          (c.oportunidad_comercial ? '<div class="oportunidad"><b>Oportunidad comercial</b>' + escaparHtml_(c.oportunidad_comercial) + '</div>' : '') +
+        '</div>'
+      );
+    });
+  }
+
+  // Nuevos modus operandi.
+  if (modus.length) {
+    bloques.push('  <p class="sublbl">Nuevos modus operandi</p>');
+    var items = modus.map(function (m) {
+      return '<li><a href="' + escaparHtml_(m.url) + '">' + escaparHtml_(m.descripcion) + '</a></li>';
+    }).join('');
+    bloques.push('  <ul class="mo">' + items + '</ul>');
+  }
+
+  bloques.push('</section>');
+  return bloques.join('\n');
+}
+
+/** Clase CSS del chip de riesgo según nivel. */
+function chipClaseRiesgo_(nivel) {
+  var n = String(nivel || '').toLowerCase();
+  if (n.indexOf('alto') !== -1)  return 'chip--alto';
+  if (n.indexOf('medio') !== -1) return 'chip--medio';
+  return 'chip--bajo';
 }
 
 /** Hero de portada (titular principal). */
@@ -210,8 +272,8 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
     '<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center">',
     '<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#ffffff;">',
 
-    // Banda roja con logo + meta.
-    '<tr><td style="background:' + C_RED + ';padding:22px 30px;">',
+    // Banda azul corporativa con logo + meta.
+    '<tr><td style="background:' + C_BLUE + ';padding:22px 30px;">',
     '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
     '    <td align="left" style="vertical-align:middle;"><span style="background:#fff;border-radius:4px;padding:9px 13px;display:inline-block;"><img src="' + LOGO_URL + '" alt="ALTO" height="24" style="height:24px;width:auto;display:block;"></span></td>',
     '    <td align="right" style="vertical-align:middle;font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;line-height:1.7;">Barrido de Prensa · Boletín<br><b style="font-weight:600;">Edición · ' + escaparHtml_(edicion.fecha) + '</b><br>⏱ Lectura ~' + minutos + ' min</td>',
@@ -261,7 +323,7 @@ function renderBoletinCorreo_(boletin) {
 
   // Clientes afectados.
   if (boletin.clientes.length) {
-    bloques.push(subLabelCorreo_('Clientes afectados hoy (' + boletin.clientes.length + ')'));
+    bloques.push(subLabelCorreo_('Clientes afectados · últimas 48 h (' + boletin.clientes.length + ')'));
     boletin.clientes.forEach(function (c) {
       var enc = escaparHtml_(c.cliente);
       if (c.industria) enc += ' · ' + escaparHtml_(c.industria);
