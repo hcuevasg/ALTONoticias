@@ -18,9 +18,9 @@ var CLAUDE_MAX_TOKENS = 12000;
 
 // Secciones del DIARIO de prensa (el boletín de clientes va aparte).
 var SECCIONES = [
-  { id: 'chile',     titulo: 'Chile en los últimos días' },
-  { id: 'politica',  titulo: 'Política — Chile y el mundo' },
-  { id: 'delictual', titulo: 'Tendencias delictuales' }
+  { id: 'chile',     titulo: 'Actualidad Chile' },
+  { id: 'politica',  titulo: 'Política Chile y El Mundo' },
+  { id: 'delictual', titulo: 'Tendencias Delictuales' }
 ];
 
 /** Punto de entrada de verificación. */
@@ -94,6 +94,8 @@ var PROMPT_SISTEMA = [
   'A) DIARIO DE PRENSA (titular_principal + secciones chile, politica, delictual):',
   '   Curaduría general para un diario. Elegí UN titular principal del día.',
   '   Descartá farándula, deportes triviales, videojuegos y marketing.',
+  '   En la sección delictual INCLUÍ además fallos judiciales relevantes: condenas,',
+  '   formalizaciones, sentencias y operativos contra bandas.',
   '   Bajada de ~30 palabras en español; relevancia entera 1-5.',
   '',
   'B) BOLETÍN DE INTELIGENCIA ALTO:',
