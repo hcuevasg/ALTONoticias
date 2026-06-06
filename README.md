@@ -32,13 +32,28 @@ correo-teaser al cliente con el link a la edición del día.
   contrato.json            <- JSON schema de la edición (referencia)
 ```
 
-## Estado: Fase 0 ✅ (scaffold + /docs estático)
-Lo construido hasta ahora:
-- `docs/index.html` — placeholder de la edición de hoy.
-- `docs/assets/estilos.css` — diseño del diario (estable).
-- `docs/archivo.html` — lee `ediciones/indice.json` y lista el histórico.
-- `docs/ediciones/indice.json` — manifiesto vacío (`[]`).
-- `esquema/contrato.json` — contrato de la edición (referencia).
+## Estado: COMPLETO ✅ (Fases 0–6, sistema autónomo)
+El barrido corre solo cada mañana (7–8 am America/Santiago) vía trigger temporal.
+
+Módulos de `apps-script/` (se despliegan a mano en script.google.com — ver nota clasp):
+- `Fuentes.gs` — fetch RSS + parse (XmlService) + dedup por URL.
+- `Claude.gs` — 1 llamada a la API (claude-sonnet-4-6), anti-alucinación por id.
+- `Render.gs` — JSON → 2 HTML (edición completa + correo topado), presupuesto del correo.
+- `GitHub.gs` — publica index.html + ediciones/FECHA.html + indice.json vía API.
+- `Correo.gs` — envía el digest con MailApp.
+- `Codigo.gs` — orquestador `barridoDiario()` + trigger diario.
+- `plantilla-edicion.html` — markup de la edición; `appsscript.json` — scopes + timezone.
+
+`/docs` (GitHub Pages) y `esquema/contrato.json` versionados.
+
+### Operación
+- Correr a mano: `barridoDiario()`. Pausar: `desinstalarTriggerDiario()`.
+- Re-agendar: `instalarTriggerDiario()`.
+
+### Pendientes (post-MVP)
+- Cablear el Google Sheet (Clientes / FuentesGenerales / TemasDelictuales) para
+  editar fuentes sin tocar código y activar la sección de clientes.
+- Decidir repo público vs privado antes de cargar clientes (nombres visibles en Pages).
 
 ## Secrets (en Script Properties, nunca en el repo)
 `ANTHROPIC_API_KEY`, `GITHUB_PAT`, `GITHUB_REPO`, `SHEET_ID`, `CORREO_DESTINO`.
