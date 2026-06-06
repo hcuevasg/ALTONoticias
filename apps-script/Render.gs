@@ -57,6 +57,7 @@ function renderInteligenciaEdicion_(boletin) {
       var cab = escaparHtml_(c.cliente);
       if (c.industria) cab += ' · ' + escaparHtml_(c.industria);
       if (c.tipo_amenaza) cab += ' · ' + escaparHtml_(c.tipo_amenaza);
+      if (c.fecha) cab += ' · ' + escaparHtml_(c.fecha);
       b.push(
         '  <div class="cliente">' +
           '<p class="cliente__cab">' + cab + '</p>' +
@@ -86,7 +87,7 @@ function renderPrensaEdicion_(edicion) {
         '<p class="kick">Titular del día</p>' +
         '<h1><a href="' + escaparHtml_(tp.url) + '">' + escaparHtml_(tp.titular) + '</a></h1>' +
         '<p class="hero__bajada">' + escaparHtml_(tp.bajada) + '</p>' +
-        '<p class="hero__fuente">' + escaparHtml_(tp.fuente) + '</p>' +
+        '<p class="hero__fuente">' + escaparHtml_(tp.fuente) + (tp.fecha ? ' · ' + escaparHtml_(tp.fecha) : '') + '</p>' +
       '</section>'
     );
   }
@@ -127,7 +128,8 @@ function renderArticuloEdicion_(art) {
 function moEdicionHtml_(modus) {
   if (!modus.length) return '';
   var items = modus.map(function (m) {
-    return '<li><a href="' + escaparHtml_(m.url) + '">' + escaparHtml_(m.descripcion) + '</a></li>';
+    var f = m.fecha ? ' <span style="font-family:' + F_MONO + ';font-size:10px;color:' + C_INK3 + ';">· ' + escaparHtml_(m.fecha) + '</span>' : '';
+    return '<li><a href="' + escaparHtml_(m.url) + '">' + escaparHtml_(m.descripcion) + '</a>' + f + '</li>';
   }).join('');
   return '<p class="sublbl">Nuevos modus operandi</p><ul class="mo">' + items + '</ul>';
 }
@@ -195,7 +197,7 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
         '<div style="font-family:' + F_DISP + ';font-size:27px;font-weight:800;line-height:1.04;letter-spacing:-.02em;">' + escaparHtml_(tp.titular) + '</div>' +
       '</a>' +
       '<div style="font-family:' + F_BODY + ';font-size:15px;line-height:1.45;color:' + C_INK2 + ';margin-top:9px;">' + escaparHtml_(tp.bajada) + '</div>' +
-      '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;letter-spacing:.1em;margin-top:9px;">' + escaparHtml_(tp.fuente) + '</div>' +
+      '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;letter-spacing:.1em;margin-top:9px;">' + escaparHtml_(tp.fuente) + (tp.fecha ? ' <span style="color:' + C_INK3 + ';">· ' + escaparHtml_(tp.fecha) + '</span>' : '') + '</div>' +
     '</div>'
   );
 
@@ -209,7 +211,7 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
             '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;">' + escaparHtml_(item.art.titular) + '</div>' +
           '</a>' +
           '<div style="font-family:' + F_BODY + ';font-size:13.5px;color:' + C_INK2 + ';margin-top:4px;line-height:1.4;">' + escaparHtml_(item.bajada) + '</div>' +
-          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + '</div>' +
+          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + (item.art.fecha ? ' <span style="color:' + C_INK3 + ';font-weight:400;">· ' + escaparHtml_(item.art.fecha) + '</span>' : '') + '</div>' +
         '</div>'
       );
     });
@@ -262,6 +264,7 @@ function renderInteligenciaCorreo_(boletin) {
       var enc = escaparHtml_(c.cliente);
       if (c.industria) enc += ' · ' + escaparHtml_(c.industria);
       if (c.tipo_amenaza) enc += ' · ' + escaparHtml_(c.tipo_amenaza);
+      if (c.fecha) enc += ' · ' + escaparHtml_(c.fecha);
       b.push(
         '<div style="border-left:3px solid ' + C_RED + ';padding-left:13px;margin-bottom:18px;">' +
           '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;font-weight:bold;letter-spacing:.08em;">' + enc + '</div>' +
@@ -289,6 +292,7 @@ function moCorreoHtml_(modus) {
       '<div style="margin-bottom:10px;padding-left:16px;position:relative;font-family:' + F_BODY + ';font-size:13.5px;line-height:1.42;color:' + C_INK + ';">' +
         '<span style="color:' + C_RED + ';font-size:11px;position:absolute;left:0;top:1px;">&#9650;</span>' +
         '<a href="' + escaparHtml_(m.url) + '" style="color:' + C_INK + ';text-decoration:none;">' + escaparHtml_(m.descripcion) + '</a>' +
+        (m.fecha ? ' <span style="font-family:' + F_MONO + ';font-size:10px;color:' + C_INK3 + ';">· ' + escaparHtml_(m.fecha) + '</span>' : '') +
       '</div>'
     );
   });

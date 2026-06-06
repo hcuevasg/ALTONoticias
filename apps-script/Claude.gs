@@ -232,9 +232,9 @@ function expandirAContrato_(seleccion, articulos) {
   // Titular principal (con fallback).
   var tpBase = (seleccion.titular_principal && base(seleccion.titular_principal.id)) || base(1);
   var titularPrincipal = tpBase
-    ? { titular: tpBase.titular, fuente: tpBase.fuente, url: tpBase.url,
+    ? { titular: tpBase.titular, fuente: tpBase.fuente, url: tpBase.url, fecha: tpBase.fecha,
         bajada: limpiar_((seleccion.titular_principal && seleccion.titular_principal.bajada) || '') }
-    : { titular: '', fuente: '', url: '', bajada: '' };
+    : { titular: '', fuente: '', url: '', fecha: '', bajada: '' };
 
   // Secciones del diario.
   var porId = {};
