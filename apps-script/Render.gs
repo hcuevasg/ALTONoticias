@@ -17,7 +17,7 @@ var LOGO_URL   = BASE_PAGES + '/assets/alto-logo.png';
 var C_RED = '#E84244', C_BLUE = '#4174B9', C_GREY = '#B0B6B8';
 var C_INK = '#15181D', C_INK2 = '#4A4F57', C_INK3 = '#7C828B', C_LINE = '#E1DDD4';
 var F_DISP = "Archivo,'Helvetica Neue',Arial,sans-serif";
-var F_MONO = "'IBM Plex Mono','Courier New',monospace";
+var F_MONO = "'IBM Plex Sans',Arial,sans-serif";
 var F_BODY = "'IBM Plex Sans',Arial,sans-serif";
 
 var NUM_SECCION = { chile: '1', politica: '2', delictual: '3' };
@@ -77,14 +77,14 @@ function renderInteligenciaEdicion_(boletin) {
 
 /** II · Barrido de Prensa (titular + 3 secciones; MO al final de delictual). */
 function renderPrensaEdicion_(edicion) {
-  var b = ['<section class="seccion"><h2 class="seclbl">II · Barrido de Prensa</h2></section>'];
+  var b = [];
 
-  // Titular principal (hero).
+  // Titular principal (hero) — encabeza el bloque II.
   var tp = edicion.titular_principal;
   if (tp && tp.url) {
     b.push(
       '<section class="hero">' +
-        '<p class="kick">Titular del día</p>' +
+        '<p class="kick">II · Barrido de Prensa</p>' +
         '<h1><a href="' + escaparHtml_(tp.url) + '">' + escaparHtml_(tp.titular) + '</a></h1>' +
         '<p class="hero__bajada">' + escaparHtml_(tp.bajada) + '</p>' +
         '<p class="hero__fuente">' + escaparHtml_(tp.fuente) + (tp.fecha ? ' · ' + escaparHtml_(tp.fecha) : '') + '</p>' +
@@ -188,11 +188,10 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
   // I · Inteligencia — Monitoreo de Clientes.
   cuerpo.push(renderInteligenciaCorreo_(boletin));
 
-  // II · Barrido de Prensa.
-  cuerpo.push(seclblCorreo_('II · Barrido de Prensa'));
+  // II · Barrido de Prensa (el titular encabeza el bloque).
   cuerpo.push(
-    '<div style="padding-bottom:20px;margin-bottom:6px;border-bottom:1.5px solid ' + C_INK + ';">' +
-      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">Titular del día</div>' +
+    '<div style="padding-top:13px;margin-bottom:6px;border-top:1.5px solid ' + C_INK + ';">' +
+      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">II · Barrido de Prensa</div>' +
       '<a href="' + escaparHtml_(tp.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
         '<div style="font-family:' + F_DISP + ';font-size:27px;font-weight:800;line-height:1.04;letter-spacing:-.02em;">' + escaparHtml_(tp.titular) + '</div>' +
       '</a>' +
@@ -290,7 +289,7 @@ function moCorreoHtml_(modus) {
   modus.forEach(function (m) {
     b.push(
       '<div style="margin-bottom:10px;padding-left:16px;position:relative;font-family:' + F_BODY + ';font-size:13.5px;line-height:1.42;color:' + C_INK + ';">' +
-        '<span style="color:' + C_RED + ';font-size:11px;position:absolute;left:0;top:1px;">&#9650;</span>' +
+        '<span style="display:inline-block;width:6px;height:6px;background:' + C_RED + ';position:absolute;left:0;top:7px;"></span>' +
         '<a href="' + escaparHtml_(m.url) + '" style="color:' + C_INK + ';text-decoration:none;">' + escaparHtml_(m.descripcion) + '</a>' +
         (m.fecha ? ' <span style="font-family:' + F_MONO + ';font-size:10px;color:' + C_INK3 + ';">· ' + escaparHtml_(m.fecha) + '</span>' : '') +
       '</div>'

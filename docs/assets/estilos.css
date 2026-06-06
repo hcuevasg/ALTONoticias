@@ -17,7 +17,7 @@
 
   --serif: "Archivo", "Helvetica Neue", Arial, sans-serif;   /* titulares */
   --body:  "IBM Plex Sans", Arial, sans-serif;               /* cuerpo */
-  --mono:  "IBM Plex Mono", "Courier New", monospace;        /* etiquetas */
+  --mono:  "IBM Plex Sans", Arial, sans-serif;               /* etiquetas (sans, limpio) */
 
   --ancho: 880px;
 }
@@ -78,7 +78,6 @@ a { color: inherit; }
   padding: 13px 40px;
   display: flex;
   gap: 24px;
-  border-bottom: 1.5px solid var(--ink);
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: .14em;
@@ -89,7 +88,7 @@ a { color: inherit; }
 
 /* ---------- Hero (titular principal) ----------------------------------- */
 
-.hero { max-width: var(--ancho); margin: 0 auto; padding: 40px 40px 30px; }
+.hero { padding: 30px 0 28px; border-top: 1.5px solid var(--ink); }
 
 .kick {
   font-family: var(--mono);
@@ -248,10 +247,9 @@ a { color: inherit; }
   position: absolute;
   left: 0;
   top: 13px;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   background: var(--alto-red);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 .mo a { text-decoration: none; }
 .mo a:hover { color: var(--alto-red); }
