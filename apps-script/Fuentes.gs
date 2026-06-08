@@ -28,6 +28,21 @@ var CLIENTES_POR_QUERY = 18; // chunk de clientes/alias por query cruzada
 // cliente no es el protagonista. Con esto en true, descartamos toda nota 'clientes'
 // cuyo TITULAR no nombre al cliente (o un alias). Poné false para volver al modo laxo.
 var EXIGIR_CLIENTE_EN_TITULAR = true;
+// Geografía: la sección "nuestros clientes" SOLO debe traer incidentes ocurridos EN CHILE.
+// Descarta notas de clientes cuyo TITULAR menciona un país o ciudad extranjera (= lugar del
+// hecho). A propósito NO incluye gentilicios (ej. "venezolana", "peruano"): un delito EN
+// CHILE cometido por una banda extranjera sigue siendo chileno y debe quedar. Lista editable;
+// se compara sin acentos y por palabra completa. Poné false para desactivar el backstop.
+var SOLO_CLIENTES_CHILE = true;
+var LUGARES_EXTRANJEROS = [
+  // Países
+  'peru', 'mexico', 'colombia', 'argentina', 'bolivia', 'ecuador', 'paraguay',
+  'uruguay', 'venezuela', 'brasil', 'brazil', 'espana', 'estados unidos', 'eeuu',
+  // Ciudades extranjeras de bajo riesgo de colisión (evito p.ej. "La Paz", "Mendoza",
+  // "Madrid" porque chocan con calles/apellidos chilenos)
+  'lima', 'cdmx', 'ciudad de mexico', 'guadalajara', 'monterrey', 'bogota', 'medellin',
+  'quito', 'guayaquil', 'buenos aires', 'asuncion', 'montevideo', 'caracas', 'sao paulo'
+];
 var DIAS_DELICTUAL = 2;
 var DIAS_TENDENCIA = 2;
 var DIAS_CLIENTES  = 2;
@@ -237,6 +252,8 @@ function parsearRespuesta_(resp, spec) {
     if (!art || !esReciente_(art.fecha)) continue;
     // Filtro de precisión: la nota de cliente debe nombrarlo en el TITULAR.
     if (exigirTitular && !tituloMencionaCliente_(art.titular, spec.terminosCliente)) continue;
+    // Filtro geográfico: solo incidentes de clientes ocurridos en Chile.
+    if (SOLO_CLIENTES_CHILE && spec.seccion === 'clientes' && mencionaLugarExtranjero_(art.titular)) continue;
     art.seccion = spec.seccion;
     art.industria = spec.industria;
     art.cliente = spec.cliente;
@@ -314,6 +331,11 @@ function tituloMencionaCliente_(titular, terminos) {
   }
   return false;
 }
+/** true si el texto menciona un país/ciudad extranjera de LUGARES_EXTRANJEROS. */
+function mencionaLugarExtranjero_(texto) {
+  return tituloMencionaCliente_(texto, LUGARES_EXTRANJEROS);
+}
+
 /** minúsculas + sin diacríticos (NFD); deja solo a-z0-9 como letras. */
 function normalizarTexto_(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
