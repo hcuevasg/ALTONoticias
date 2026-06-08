@@ -76,7 +76,7 @@ function generarEdicion(articulos) {
   var seleccion = parsearJsonDefensivo_(texto);
   if (!seleccion) { Logger.log('✗ Respuesta del modelo no parseable.'); return null; }
 
-  return expandirAContrato_(seleccion, articulos);
+  return expandirAContrato_(seleccion, articulos, roster);
 }
 
 // ---------- Prompt -------------------------------------------------------
@@ -114,6 +114,9 @@ var PROMPT_SISTEMA = [
   '     en genérico), NO lo incluyas aunque la industria calce. NO fuerces la atribución por',
   '     conexiones tangenciales: una nota de crimen organizado general NO es un cliente',
   '     afectado solo porque toca el sector. Ante la duda, NO lo incluyas.',
+  '     El campo "cliente" DEBE ser una empresa del ROSTER. Si la víctima/protagonista es',
+  '     otra empresa (p.ej. OTRO banco o retailer que NO está en el roster), NO la incluyas',
+  '     —aunque el titular también mencione de pasada a un cliente del roster.',
   '     industria = la del cliente en el roster. Completá tipo_amenaza,',
   '     impacto (1 frase) y oportunidad_comercial: qué servicio le vendería ALTO a partir',
   '     de esa noticia (inteligencia criminal, monitoreo de bandas, investigación, analítica',
@@ -234,8 +237,13 @@ function parsearJsonDefensivo_(texto) {
 }
 
 /** Expande la selección (ids + editorial) al contrato completo. */
-function expandirAContrato_(seleccion, articulos) {
+function expandirAContrato_(seleccion, articulos, roster) {
   var hoy = Utilities.formatDate(new Date(), 'America/Santiago', 'yyyy-MM-dd');
+
+  // Índice del roster para validar/canonizar la atribución de Claude. Si el roster
+  // viene vacío (lectura fallida), NO validamos (para no descartar todo por error).
+  var rosterIndex = construirIndiceRoster_(roster || []);
+  var validarRoster = rosterIndex.length > 0;
 
   function base(id) {
     var idx = parseInt(id, 10) - 1;
@@ -273,8 +281,16 @@ function expandirAContrato_(seleccion, articulos) {
   var clientesAfectados = (bol.clientes_afectados || []).map(function (it) {
     var b = base(it.id);
     if (!b || !it.cliente) return null;
-    b.cliente = limpiar_(it.cliente);
-    b.industria = limpiar_(it.industria || '');
+    // Backstop anti-falsos-positivos: el cliente atribuido DEBE estar en el roster.
+    // Evita que salga publicado, p.ej., un banco que no es cliente nuestro.
+    var match = validarRoster ? clienteEnRoster_(it.cliente, rosterIndex) : null;
+    if (validarRoster && !match) {
+      Logger.log('  ⚠ Cliente atribuido "%s" no está en el roster; se descarta.', it.cliente);
+      return null;
+    }
+    // Canonizamos al nombre/industria oficiales del roster (si hubo match).
+    b.cliente = match ? match.nombre : limpiar_(it.cliente);
+    b.industria = match ? match.industria : limpiar_(it.industria || '');
     b.tipo_amenaza = limpiar_(it.tipo_amenaza || '');
     b.impacto = limpiar_(it.impacto || '');
     b.oportunidad_comercial = limpiar_(it.oportunidad_comercial || '');
@@ -321,6 +337,45 @@ function expandirAContrato_(seleccion, articulos) {
 function acotarRelevancia_(v) {
   var n = parseInt(v, 10);
   return isNaN(n) ? 3 : Math.max(1, Math.min(5, n));
+}
+
+/** Índice del roster: cada entrada con sus términos (nombre + alias) normalizados. */
+function construirIndiceRoster_(roster) {
+  return roster.map(function (cl) {
+    var terminos = [cl.nombre];
+    String(cl.alias || '').split(',').forEach(function (a) {
+      a = a.trim(); if (a) terminos.push(a);
+    });
+    return {
+      nombre: limpiar_(cl.nombre),
+      industria: limpiar_(cl.industria || ''),
+      terminos: terminos.map(normalizarTexto_).filter(Boolean)
+    };
+  });
+}
+
+/**
+ * Devuelve la entrada del roster a la que corresponde el cliente atribuido por Claude,
+ * o null si no calza con ninguno. Match por palabra completa y bidireccional
+ * (ej.: atribuye "Banco Santander" y el roster tiene "Santander", o viceversa).
+ * normalizarTexto_ / escaparRegex_ están en Fuentes.gs (scope global compartido).
+ */
+function clienteEnRoster_(clienteStr, rosterIndex) {
+  var c = normalizarTexto_(clienteStr);
+  if (!c) return null;
+  for (var i = 0; i < rosterIndex.length; i++) {
+    var terms = rosterIndex[i].terminos;
+    for (var j = 0; j < terms.length; j++) {
+      if (contienePalabra_(c, terms[j]) || contienePalabra_(terms[j], c)) return rosterIndex[i];
+    }
+  }
+  return null;
+}
+
+/** true si `term` aparece como palabra completa dentro de `texto` (ambos ya normalizados). */
+function contienePalabra_(texto, term) {
+  if (!term) return false;
+  return new RegExp('(^|[^a-z0-9])' + escaparRegex_(term) + '([^a-z0-9]|$)').test(texto);
 }
 
 function fechaIso_(texto) {
