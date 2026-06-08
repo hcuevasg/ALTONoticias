@@ -86,10 +86,14 @@ var PROMPT_SISTEMA = [
   'corporativa contra el crimen organizado (retail, utilities, logística, etc.).',
   '',
   'Recibís: (1) una lista NUMERADA de titulares reales de hoy, cada uno etiquetado por',
-  'origen — "general", "delictual", "tendencia" o "clientes/<industria>"; y (2) un ROSTER',
-  'de clientes de ALTO con su industria y alias.',
+  'origen — "general", "delictual", "tendencia", "clientes/<industria>" o "alto"; y (2) un',
+  'ROSTER de clientes de ALTO con su industria y alias.',
   '',
-  'Producí DOS salidas en un solo JSON:',
+  'El origen "alto" son titulares capturados por una búsqueda sobre la PROPIA empresa ALTO',
+  '(Grupo ALTO / ALTO S.A.), una firma chilena de prevención de pérdidas y "fiscalía privada"',
+  '(voceros: Jorge Nazer, Ángeles Kassis).',
+  '',
+  'Producí TRES salidas en un solo JSON:',
   '',
   'A) DIARIO DE PRENSA (titular_principal + secciones chile, politica, delictual):',
   '   Curaduría general para un diario. Elegí UN titular principal del día.',
@@ -104,10 +108,12 @@ var PROMPT_SISTEMA = [
   '     encerrona, robo de carga/cable/cobre, banda, etc.). DESCARTÁ marketing, aperturas,',
   '     campañas, resultados financieros, lanzamientos. Atribuí el cliente EXACTO del roster',
   '     (usá los alias: si dice "Líder" es Walmart, "Sodimac" es Homecenter, "Movistar" es',
-  '     Telefónica). INCLUÍ un cliente SOLO si es el protagonista/víctima explícito del',
-  '     incidente (nombrado y claramente afectado). NO fuerces la atribución por conexiones',
-  '     tangenciales: una nota de crimen organizado general NO es un cliente afectado solo',
-  '     porque toca el sector. Ante la duda, NO lo incluyas.',
+  '     Telefónica). REGLA DURA: incluí un cliente SOLO si su nombre o un alias aparece',
+  '     LITERALMENTE EN EL TITULAR y es el protagonista/víctima explícito del incidente. Si',
+  '     el titular no nombra al cliente (habla de "un mall", "un supermercado", "una empresa"',
+  '     en genérico), NO lo incluyas aunque la industria calce. NO fuerces la atribución por',
+  '     conexiones tangenciales: una nota de crimen organizado general NO es un cliente',
+  '     afectado solo porque toca el sector. Ante la duda, NO lo incluyas.',
   '     industria = la del cliente en el roster. Completá tipo_amenaza,',
   '     impacto (1 frase) y oportunidad_comercial: qué servicio le vendería ALTO a partir',
   '     de esa noticia (inteligencia criminal, monitoreo de bandas, investigación, analítica',
@@ -118,6 +124,14 @@ var PROMPT_SISTEMA = [
   '     "Medio" o "Bajo" con un motivo breve. CALIBRÁ usando todo el rango: "Alto" solo si hay',
   '     incidentes graves Y recurrentes hoy; "Medio" para señales moderadas o aisladas; "Bajo"',
   '     para poca o nula actividad. NO marques todo "Alto".',
+  '',
+  'C) ALTO EN LA PRENSA (alto_prensa):',
+  '   De los titulares con origen "alto", INCLUÍ SOLO los que son genuinamente sobre Grupo',
+  '   ALTO / ALTO S.A. — la empresa de prevención de pérdidas, seguridad corporativa o',
+  '   "fiscalía privada", o declaraciones de sus voceros (Jorge Nazer, Ángeles Kassis, etc.).',
+  '   DESCARTÁ todo donde "alto" es palabra común ("alto el fuego", "alto riesgo", "pare/alto",',
+  '   deportes, otras personas o empresas homónimas). Ante la duda, NO lo incluyas.',
+  '   Bajada de ~30 palabras; relevancia entera 1-5. Si no hay menciones reales, devolvé [].',
   '',
   'Reglas: referenciá cada artículo SOLO por su id. NO inventes ids ni artículos. NO copies',
   'el titular ni la fuente (los completamos por id). Ordená por relevancia descendente.',
@@ -137,10 +151,12 @@ var PROMPT_SISTEMA = [
   '    ],',
   '    "nuevos_modus_operandi": [ { "id": <n>, "descripcion": "<1-2 frases>" } ],',
   '    "riesgo_por_industria": [ { "industria": "<nombre>", "nivel": "<Alto|Medio|Bajo>", "motivo": "<breve>" } ]',
-  '  }',
+  '  },',
+  '  "alto_prensa": [ { "id": <n>, "bajada": "<~30p>", "relevancia": <1-5> } ]',
   '}',
   'Las 3 secciones del diario deben estar presentes aunque "articulos" sea []. Si no hay',
-  'clientes afectados, "clientes_afectados" puede ser [].'
+  'clientes afectados, "clientes_afectados" puede ser []. Si no hay menciones de ALTO,',
+  '"alto_prensa" puede ser [].'
 ].join('\n');
 
 /** Mensaje de usuario: fecha + roster + lista numerada (sin urls). */
@@ -278,6 +294,15 @@ function expandirAContrato_(seleccion, articulos) {
              motivo: limpiar_(it.motivo || '') };
   }).filter(function (x) { return x.industria; });
 
+  // III · ALTO en la prensa.
+  var altoPrensa = (seleccion.alto_prensa || []).map(function (it) {
+    var b = base(it.id);
+    if (!b) return null;
+    b.bajada = limpiar_(it.bajada || '');
+    b.relevancia = acotarRelevancia_(it.relevancia);
+    return b;
+  }).filter(Boolean).sort(function (x, y) { return y.relevancia - x.relevancia; });
+
   return {
     fecha: hoy,
     titular_principal: titularPrincipal,
@@ -286,7 +311,8 @@ function expandirAContrato_(seleccion, articulos) {
       clientes_afectados: clientesAfectados,
       nuevos_modus_operandi: modusOperandi,
       riesgo_por_industria: riesgo
-    }
+    },
+    alto_prensa: altoPrensa
   };
 }
 

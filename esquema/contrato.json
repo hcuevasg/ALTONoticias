@@ -3,7 +3,7 @@
   "title": "Edición diaria — Barrido de Prensa ALTO (diario + boletín)",
   "description": "Objeto que produce generarEdicion() (Claude.gs) tras expandir la selección del modelo. El modelo responde una versión 'lean' (por id); acá se documenta el objeto YA EXPANDIDO que consume Render.gs. Dos productos: el diario de prensa (público en Pages) y el boletín de inteligencia ALTO (solo en el correo).",
   "type": "object",
-  "required": ["fecha", "titular_principal", "secciones", "boletin"],
+  "required": ["fecha", "titular_principal", "secciones", "boletin", "alto_prensa"],
   "additionalProperties": false,
   "properties": {
     "fecha": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
@@ -103,6 +103,24 @@
               "motivo":    { "type": "string" }
             }
           }
+        }
+      }
+    },
+
+    "alto_prensa": {
+      "description": "III · ALTO en la Prensa: menciones reales de Grupo ALTO en prensa (diario público). Puede ser [] si no hay menciones en la ventana de 48 h.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["titular", "fuente", "url", "fecha", "bajada", "relevancia"],
+        "additionalProperties": false,
+        "properties": {
+          "titular":    { "type": "string" },
+          "fuente":     { "type": "string" },
+          "url":        { "type": "string", "format": "uri", "description": "OBLIGATORIA y real; sin url se descarta." },
+          "fecha":      { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "bajada":     { "type": "string" },
+          "relevancia": { "type": "integer", "minimum": 1, "maximum": 5 }
         }
       }
     }

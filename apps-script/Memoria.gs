@@ -40,6 +40,7 @@ function urlsDeEdicion_(edicion) {
   var b = edicion.boletin || {};
   (b.clientes_afectados || []).forEach(function (c) { if (c.url) urls.push(c.url); });
   (b.nuevos_modus_operandi || []).forEach(function (m) { if (m.url) urls.push(m.url); });
+  (edicion.alto_prensa || []).forEach(function (a) { if (a.url) urls.push(a.url); });
   return urls;
 }
 

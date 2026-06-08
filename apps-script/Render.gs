@@ -1,8 +1,9 @@
 /**
  * Render.gs — JSON → dos HTML (Pages completo + correo topado), identidad ALTO.
- * Estructura (cliente): I · Inteligencia (Monitoreo de Clientes) → II · Barrido de
- * Prensa (1 Actualidad Chile · 2 Política Chile y El Mundo · 3 Tendencias Delictuales,
- * que incluye fallos judiciales y, al final, Nuevos modus operandi).
+ * Estructura (cliente): I · ALTO en la Prensa → II · Inteligencia (Monitoreo de
+ * Clientes) → III · Barrido de Prensa (1 Actualidad Chile · 2 Política Chile y El
+ * Mundo · 3 Tendencias Delictuales, que incluye fallos judiciales y, al final,
+ * Nuevos modus operandi).
  */
 
 // --- Presupuesto del correo (control determinista del <5 min) -------------
@@ -10,6 +11,7 @@ var TOPE_CORREO = { titular_principal: 1, chile: 3, politica: 3, delictual: 3 };
 var MAX_PALABRAS_BAJADA_CORREO = 30;
 var TOPE_BOLETIN_CLIENTES = 10;
 var TOPE_BOLETIN_MO = 5;
+var TOPE_ALTO = 5;
 
 var BASE_PAGES = 'https://hcuevasg.github.io/ALTONoticias';
 var LOGO_URL   = BASE_PAGES + '/assets/alto-logo.png';
@@ -32,7 +34,22 @@ function renderEdicion(edicion) {
   html = reemplazar_(html, '{{FECHA_LARGA}}', escaparHtml_(fechaLarga_(edicion.fecha)));
   html = reemplazar_(html, '{{INTELIGENCIA}}', renderInteligenciaEdicion_(edicion.boletin));
   html = reemplazar_(html, '{{PRENSA}}', renderPrensaEdicion_(edicion));
+  html = reemplazar_(html, '{{ALTO}}', renderAltoEdicion_(edicion.alto_prensa));
   return html;
+}
+
+/** I · ALTO en la Prensa — menciones de Grupo ALTO en prensa. */
+function renderAltoEdicion_(items) {
+  items = items || [];
+  var b = ['<section class="seccion">',
+           '  <h2 class="seclbl">I · ALTO en la Prensa</h2>'];
+  if (items.length) {
+    b.push('  <div class="articulos">' + items.map(renderArticuloEdicion_).join('\n') + '</div>');
+  } else {
+    b.push('  <p class="archivo-vacio">Sin menciones de ALTO en las últimas 48 h.</p>');
+  }
+  b.push('</section>');
+  return b.join('\n');
 }
 
 /** I · Inteligencia — Monitoreo de Clientes (riesgo + clientes afectados). */
@@ -41,7 +58,7 @@ function renderInteligenciaEdicion_(boletin) {
   var clientes = boletin.clientes_afectados || [];
   var riesgo = boletin.riesgo_por_industria || [];
 
-  var b = ['<section class="seccion">', '  <h2 class="seclbl">I · Inteligencia — Monitoreo de Clientes</h2>'];
+  var b = ['<section class="seccion">', '  <h2 class="seclbl">II · Inteligencia — Monitoreo de Clientes</h2>'];
 
   if (riesgo.length) {
     var chips = riesgo.map(function (r) {
@@ -84,7 +101,7 @@ function renderPrensaEdicion_(edicion) {
   if (tp && tp.url) {
     b.push(
       '<section class="hero">' +
-        '<p class="kick">II · Barrido de Prensa</p>' +
+        '<p class="kick">III · Barrido de Prensa</p>' +
         '<h1><a href="' + escaparHtml_(tp.url) + '">' + escaparHtml_(tp.titular) + '</a></h1>' +
         '<p class="hero__bajada">' + escaparHtml_(tp.bajada) + '</p>' +
         '<p class="hero__fuente">' + escaparHtml_(tp.fuente) + (tp.fecha ? ' · ' + escaparHtml_(tp.fecha) : '') + '</p>' +
@@ -175,23 +192,32 @@ function renderCorreo(edicion) {
   });
   boletin.modus.forEach(function (m) { palabras += contarPalabras_(m.descripcion); });
 
+  var altoItems = (edicion.alto_prensa || []).slice(0, TOPE_ALTO).map(function (art) {
+    var bajada = truncarPalabras_(art.bajada, MAX_PALABRAS_BAJADA_CORREO);
+    palabras += contarPalabras_(art.titular) + contarPalabras_(bajada);
+    return { art: art, bajada: bajada };
+  });
+
   var minutos = Math.max(1, Math.round(palabras / 200));
   var edicionUrl = BASE_PAGES + '/ediciones/' + encodeURIComponent(edicion.fecha) + '.html';
-  return { html: construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicionUrl),
+  return { html: construirHtmlCorreo_(edicion, seccionesCorreo, boletin, altoItems, minutos, edicionUrl),
            minutos: minutos, palabras: palabras };
 }
 
-function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicionUrl) {
+function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, altoItems, minutos, edicionUrl) {
   var tp = edicion.titular_principal;
   var cuerpo = [];
 
-  // I · Inteligencia — Monitoreo de Clientes.
+  // I · ALTO en la Prensa.
+  cuerpo.push(altoCorreoHtml_(altoItems));
+
+  // II · Inteligencia — Monitoreo de Clientes.
   cuerpo.push(renderInteligenciaCorreo_(boletin));
 
-  // II · Barrido de Prensa (el titular encabeza el bloque).
+  // III · Barrido de Prensa (el titular encabeza el bloque).
   cuerpo.push(
     '<div style="padding-top:13px;margin-bottom:6px;border-top:1.5px solid ' + C_INK + ';">' +
-      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">II · Barrido de Prensa</div>' +
+      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">III · Barrido de Prensa</div>' +
       '<a href="' + escaparHtml_(tp.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
         '<div style="font-family:' + F_DISP + ';font-size:27px;font-weight:800;line-height:1.04;letter-spacing:-.02em;">' + escaparHtml_(tp.titular) + '</div>' +
       '</a>' +
@@ -245,7 +271,7 @@ function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, minutos, edicio
 
 /** I · Inteligencia — Monitoreo de Clientes (correo): riesgo + clientes. */
 function renderInteligenciaCorreo_(boletin) {
-  var b = [seclblCorreo_('I · Inteligencia — Monitoreo de Clientes')];
+  var b = [seclblCorreo_('II · Inteligencia — Monitoreo de Clientes')];
 
   if (boletin.riesgo.length) {
     var chips = boletin.riesgo.map(function (r) {
@@ -298,6 +324,27 @@ function moCorreoHtml_(modus) {
   return b.join('\n');
 }
 
+/** III · ALTO en la Prensa (correo): titulares estilo prensa o nota de vacío. */
+function altoCorreoHtml_(altoItems) {
+  var b = [seclblCorreo_('I · ALTO en la Prensa')];
+  if (altoItems && altoItems.length) {
+    altoItems.forEach(function (item) {
+      b.push(
+        '<div style="margin-bottom:15px;">' +
+          '<a href="' + escaparHtml_(item.art.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
+            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;">' + escaparHtml_(item.art.titular) + '</div>' +
+          '</a>' +
+          '<div style="font-family:' + F_BODY + ';font-size:13.5px;color:' + C_INK2 + ';margin-top:4px;line-height:1.4;">' + escaparHtml_(item.bajada) + '</div>' +
+          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + (item.art.fecha ? ' <span style="color:' + C_INK3 + ';font-weight:400;">· ' + escaparHtml_(item.art.fecha) + '</span>' : '') + '</div>' +
+        '</div>'
+      );
+    });
+  } else {
+    b.push('<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_INK3 + ';font-style:italic;margin-bottom:6px;">Sin menciones de ALTO en las últimas 48 h.</div>');
+  }
+  return b.join('\n');
+}
+
 function seclblCorreo_(texto) {
   return '<div style="font-family:' + F_MONO + ';font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + C_RED +
     ';font-weight:bold;margin:26px 0 14px;border-top:1.5px solid ' + C_INK + ';padding-top:13px;">' +
@@ -334,6 +381,7 @@ function testRender() {
   afirmar_('banda presente', htmlEdicion.indexOf('class="band"') !== -1);
   afirmar_('Inteligencia primero', htmlEdicion.indexOf('Monitoreo de Clientes') !== -1);
   afirmar_('Barrido de Prensa presente', htmlEdicion.indexOf('Barrido de Prensa') !== -1);
+  afirmar_('ALTO en la Prensa presente', htmlEdicion.indexOf('I · ALTO en la Prensa') !== -1);
   afirmar_('sin placeholders', htmlEdicion.indexOf('{{') === -1);
 
   var correo = renderCorreo(edicion);

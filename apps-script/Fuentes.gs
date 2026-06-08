@@ -23,6 +23,11 @@
 var TOPE_LOG_TEST = 30;
 var LOTE_FETCH    = 40;     // tamaño de lote para fetchAll
 var CLIENTES_POR_QUERY = 18; // chunk de clientes/alias por query cruzada
+// Precisión de clientes: Google News matchea el cliente en el CUERPO, no solo en el
+// titular, y a Claude solo le pasamos el titular → atribuciones de notas donde el
+// cliente no es el protagonista. Con esto en true, descartamos toda nota 'clientes'
+// cuyo TITULAR no nombre al cliente (o un alias). Poné false para volver al modo laxo.
+var EXIGIR_CLIENTE_EN_TITULAR = true;
 var DIAS_DELICTUAL = 2;
 var DIAS_TENDENCIA = 2;
 var DIAS_CLIENTES  = 2;
@@ -30,6 +35,11 @@ var DIAS_CLIENTES  = 2;
 // vieja que esto (el when: de Google News no es estricto y deja pasar antiguas).
 // Medido en HORAS desde el momento de la corrida, para que sea exactamente 48 h.
 var MAX_HORAS_ANTIGUEDAD = 48;
+
+// Sección III · ALTO en la Prensa: menciones de Grupo ALTO. Query distintiva para
+// no traer "alto" como palabra común. La IA igual filtra falsos positivos.
+var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "fiscalía privada" OR "Jorge Nazer" OR "Ángeles Kassis")';
+var DIAS_ALTO = 2;
 
 function test() {
   Logger.log('=== Prueba de fuentes (taxonomía) ===');
@@ -142,10 +152,18 @@ function leerFuentesDelSheet_() {
     for (var c = 0; c < terms.length; c += CLIENTES_POR_QUERY) {
       var chunk = terms.slice(c, c + CLIENTES_POR_QUERY);
       var q = '(' + chunk.join(' OR ') + ') ' + amenaza;
+      // terminosCliente: el chunk sin comillas, para filtrar por presencia en el titular.
+      var terminosCliente = chunk.map(function (t) { return t.replace(/"/g, '').trim(); });
       specs.push({ url: urlGoogleNews_(q, DIAS_CLIENTES), etiqueta: ind,
-                   seccion: 'clientes', industria: ind, cliente: '' });
+                   seccion: 'clientes', industria: ind, cliente: '',
+                   terminosCliente: terminosCliente });
     }
   });
+
+  // 6) ALTO en la prensa (sección III): menciones de Grupo ALTO. Query distintiva
+  //    fija; la IA filtra falsos positivos. El filtro de recencia 48 h aplica igual.
+  specs.push({ url: urlGoogleNews_(QUERY_ALTO, DIAS_ALTO), etiqueta: 'ALTO',
+               seccion: 'alto', industria: '', cliente: '' });
 
   return specs;
 }
@@ -210,15 +228,19 @@ function parsearRespuesta_(resp, spec) {
   var canal = raiz.getChild('channel');
   var items = canal ? canal.getChildren('item') : raiz.getChildren('entry');
 
+  var exigirTitular = EXIGIR_CLIENTE_EN_TITULAR && spec.seccion === 'clientes' &&
+                      spec.terminosCliente && spec.terminosCliente.length;
+
   var articulos = [];
   for (var i = 0; i < items.length; i++) {
     var art = parsearItem_(items[i], { etiqueta: spec.etiqueta });
-    if (art && esReciente_(art.fecha)) {
-      art.seccion = spec.seccion;
-      art.industria = spec.industria;
-      art.cliente = spec.cliente;
-      articulos.push(art);
-    }
+    if (!art || !esReciente_(art.fecha)) continue;
+    // Filtro de precisión: la nota de cliente debe nombrarlo en el TITULAR.
+    if (exigirTitular && !tituloMencionaCliente_(art.titular, spec.terminosCliente)) continue;
+    art.seccion = spec.seccion;
+    art.industria = spec.industria;
+    art.cliente = spec.cliente;
+    articulos.push(art);
   }
   return articulos;
 }
@@ -275,6 +297,29 @@ function deduplicarPorUrl_(articulos) {
 function textoHijo_(elem, nombre) {
   var hijo = elem.getChild(nombre);
   return hijo ? hijo.getText() : '';
+}
+
+/**
+ * true si el titular nombra a alguno de los términos del cliente (nombre/alias).
+ * Compara sin acentos y con límite de palabra para no matchear subcadenas
+ * (ej.: "BCI" no debe gatillar dentro de otra palabra). Multipalabra ("Mall Plaza") OK.
+ */
+function tituloMencionaCliente_(titular, terminos) {
+  var t = normalizarTexto_(titular);
+  for (var i = 0; i < terminos.length; i++) {
+    var term = normalizarTexto_(terminos[i]);
+    if (!term) continue;
+    var re = new RegExp('(^|[^a-z0-9])' + escaparRegex_(term) + '([^a-z0-9]|$)');
+    if (re.test(t)) return true;
+  }
+  return false;
+}
+/** minúsculas + sin diacríticos (NFD); deja solo a-z0-9 como letras. */
+function normalizarTexto_(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function escaparRegex_(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 function normalizarUrl_(url) {
   return String(url).trim().toLowerCase().replace(/\/+$/, '');
