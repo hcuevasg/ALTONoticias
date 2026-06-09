@@ -107,7 +107,7 @@ function recolectarTitulares() {
     }
   }
 
-  var unicos = deduplicarPorUrl_(todos);
+  var unicos = deduplicar_(todos);
   Logger.log('Ítems %s → únicos %s (−%s dup)', todos.length, unicos.length, todos.length - unicos.length);
   return unicos;
 }
@@ -305,13 +305,22 @@ function parsearItem_(item, fuente) {
   };
 }
 
-function deduplicarPorUrl_(articulos) {
-  var vistos = {}, unicos = [];
+/**
+ * Deduplica por URL Y por titular normalizado. El dedup por titular es necesario porque
+ * Google News devuelve URLs de redirección distintas para el MISMO artículo según el feed
+ * (p.ej. las dos queries de ALTO traen la misma nota con URLs distintas). Se queda con la
+ * primera aparición.
+ */
+function deduplicar_(articulos) {
+  var vistosUrl = {}, vistosTit = {}, unicos = [];
   for (var i = 0; i < articulos.length; i++) {
-    var clave = normalizarUrl_(articulos[i].url);
-    if (vistos[clave]) continue;
-    vistos[clave] = true;
-    unicos.push(articulos[i]);
+    var a = articulos[i];
+    var claveUrl = normalizarUrl_(a.url);
+    var claveTit = normalizarTitulo_(a.titular);
+    if (vistosUrl[claveUrl] || (claveTit && vistosTit[claveTit])) continue;
+    vistosUrl[claveUrl] = true;
+    if (claveTit) vistosTit[claveTit] = true;
+    unicos.push(a);
   }
   return unicos;
 }
@@ -352,6 +361,10 @@ function escaparRegex_(s) {
 }
 function normalizarUrl_(url) {
   return String(url).trim().toLowerCase().replace(/\/+$/, '');
+}
+/** Clave de dedup por titular: minúsculas, sin acentos, espacios colapsados. */
+function normalizarTitulo_(s) {
+  return normalizarTexto_(s).replace(/\s+/g, ' ').trim();
 }
 function limpiar_(texto) {
   return String(texto).replace(/\s+/g, ' ').trim();
