@@ -51,9 +51,14 @@ var DIAS_CLIENTES  = 2;
 // Medido en HORAS desde el momento de la corrida, para que sea exactamente 48 h.
 var MAX_HORAS_ANTIGUEDAD = 48;
 
-// Sección III · ALTO en la Prensa: menciones de Grupo ALTO. Query distintiva para
-// no traer "alto" como palabra común. La IA igual filtra falsos positivos.
-var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "fiscalía privada" OR "Jorge Nazer" OR "Ángeles Kassis")';
+// Sección "ALTO en la Prensa": menciones de Grupo ALTO. Dos queries que se complementan:
+// (1) PRECISA — frases/nombres distintivos que por sí solos identifican a la empresa.
+var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "ALTO Chile" OR "fiscalía privada" OR "Jorge Nazer" OR "Ángeles Kassis")';
+// (2) ANCLADA — la palabra ALTO emparejada con una señal fuerte de la empresa. Los voceros
+// de nombre común (Eduardo Hernández, Rodrigo Varela) y PUCV (su socio de estudios) solo se
+// usan JUNTO a "ALTO", para no traer "alto" como palabra suelta. Captura casos como el
+// estudio "ALTO-PUCV..." que la query precisa no trae. La IA filtra falsos positivos.
+var QUERY_ALTO_ANCLADA = 'ALTO ("Eduardo Hernández" OR "Rodrigo Varela" OR PUCV OR "prevención de pérdidas" OR "prevención del delito")';
 var DIAS_ALTO = 2;
 
 function test() {
@@ -175,9 +180,11 @@ function leerFuentesDelSheet_() {
     }
   });
 
-  // 6) ALTO en la prensa (sección III): menciones de Grupo ALTO. Query distintiva
-  //    fija; la IA filtra falsos positivos. El filtro de recencia 48 h aplica igual.
+  // 6) ALTO en la prensa: menciones de Grupo ALTO. Dos queries (precisa + anclada); el
+  //    dedup por URL fusiona el solapamiento. La IA filtra falsos positivos.
   specs.push({ url: urlGoogleNews_(QUERY_ALTO, DIAS_ALTO), etiqueta: 'ALTO',
+               seccion: 'alto', industria: '', cliente: '' });
+  specs.push({ url: urlGoogleNews_(QUERY_ALTO_ANCLADA, DIAS_ALTO), etiqueta: 'ALTO',
                seccion: 'alto', industria: '', cliente: '' });
 
   return specs;
