@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch 001 · Boletín de Seguridad Colombia — versión ALTO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; padding-top: 46px;
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+h1,h2,h3 { margin: 0; font-family: var(--font-display); font-weight: 800; letter-spacing: -.01em; }
+a { color: inherit; }
+
+/* ---------- Navegación de variantes (herramienta del sketch) ----------- */
+#variant-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+  background: #fff; border-bottom: 1px solid var(--color-border);
+  padding: 8px 16px; display: flex; gap: 8px; align-items: center;
+  font-family: system-ui;
+}
+#variant-nav .lbl { font-size: 11px; color: var(--color-text-faint); margin-right: 8px; }
+.variant-tab {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em;
+  padding: 6px 14px; border: 1px solid var(--color-border); background: #fff;
+  cursor: pointer; border-radius: var(--radius-sm); transition: all .15s ease;
+}
+.variant-tab:hover { border-color: var(--alto-red); color: var(--alto-red); }
+.variant-tab.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+.variant { display: none; }
+.variant.active { display: block; }
+
+/* ---------- Marco de viewport ------------------------------------------ */
+.stage { margin: 0 auto; transition: max-width .2s ease; }
+
+/* ---------- Identidad ALTO (espejo de estilos.css) ---------------------- */
+.band { background: var(--color-text); color: #fff; }
+.band__inner {
+  max-width: var(--ancho); margin: 0 auto; padding: 20px 40px;
+  display: flex; justify-content: space-between; align-items: center; gap: 20px;
+}
+.band__logo {
+  background: #fff; border-radius: 4px; padding: 10px 16px;
+  display: inline-flex; flex: 0 0 auto;
+  font-family: var(--font-display); font-weight: 900; font-size: 22px;
+  color: var(--alto-red); letter-spacing: -.02em;
+}
+.band__meta {
+  text-align: right; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase; line-height: 1.8;
+}
+.band__meta b { font-weight: 600; }
+
+.nav {
+  max-width: var(--ancho); margin: 0 auto; padding: 12px 40px;
+  display: flex; gap: 24px; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.nav a { text-decoration: none; font-weight: 600; color: var(--color-text); transition: color .15s ease; }
+.nav a:hover { color: var(--alto-red); }
+
+.diario { max-width: var(--ancho); margin: 0 auto; padding: 0 40px 8px; }
+.seccion { margin-top: 30px; border-top: 1.5px solid var(--color-text); padding-top: 16px; }
+.seclbl {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--alto-red); font-weight: 600;
+  margin: 0 0 18px; display: flex; align-items: center; gap: 10px;
+}
+.seclbl::before { content: ""; width: 18px; height: 2px; background: var(--alto-red); }
+.seclbl .n { color: var(--color-text-faint); font-weight: 400; }
+
+.kick {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--alto-red); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.kick::after { content: ""; flex: 1; height: 1.5px; background: var(--color-border); }
+
+.pie { background: var(--color-text); color: #fff; margin-top: 38px; }
+.pie__inner {
+  max-width: var(--ancho); margin: 0 auto; padding: 16px 40px;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+}
+.pie__inner .tag { color: var(--alto-grey); }
+.pie__inner b { color: var(--alto-red); font-weight: 600; }
+
+/* ---------- Piezas del boletín ------------------------------------------ */
+.sev {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px;
+  display: inline-block; border-radius: var(--radius-sm); white-space: nowrap;
+}
+.sev--critico { background: var(--sev-critico-bg); color: var(--sev-critico-fg); }
+.sev--alto    { background: var(--sev-alto-bg);    color: var(--sev-alto-fg); }
+.sev--medio   { background: var(--sev-medio-bg);   color: var(--sev-medio-fg); }
+.sev--info    { background: var(--sev-info-bg);    color: var(--sev-info-fg); }
+.sev--off     { background: var(--sev-off-bg);     color: var(--sev-off-fg); }
+
+.tagsec {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--color-text-muted);
+  border: 1px solid var(--color-border); padding: 2px 7px;
+  display: inline-block; border-radius: var(--radius-sm); white-space: nowrap;
+}
+.fuente {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--alto-blue); font-weight: 600;
+  text-decoration: none; transition: color .15s ease;
+}
+.fuente:hover { text-decoration: underline; }
+.loc {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-text-faint);
+}
+
+/* Tendencias */
+.trends { display: flex; flex-wrap: wrap; gap: 8px; }
+.trend {
+  display: flex; align-items: baseline; gap: 7px;
+  background: var(--color-surface); padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 12.5px; line-height: 1.35;
+}
+.trend b { font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.t-up   { color: var(--alto-red); }
+.t-down { color: var(--alto-blue); }
+.t-flat { color: var(--color-text-faint); }
+
+/* Bloques críticos (estilo .cliente del barrido) */
+.critico { border-left: 3px solid var(--alto-red); padding-left: 14px; margin-bottom: 22px; }
+.critico__cab { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.critico__titular { font-family: var(--font-display); font-size: 19px; font-weight: 700; line-height: 1.2; margin-top: 6px; }
+.critico__titular a { text-decoration: none; }
+.critico__titular a:hover { color: var(--alto-red); }
+.critico__resumen { font-size: 13.5px; color: var(--color-text-muted); margin-top: 5px; line-height: 1.45; }
+.critico__impacto {
+  background: #FDF0F0; border-left: 2px solid var(--alto-red);
+  padding: 9px 12px; margin-top: 8px; font-size: 13px; line-height: 1.45;
+}
+.critico__impacto b {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--alto-red); display: block; margin-bottom: 3px;
+}
+.critico__meta { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* Artículos en dos columnas (espejo .articulos/.art) */
+.articulos { columns: 2; column-gap: 38px; }
+@media (max-width: 640px) { .articulos { columns: 1; } }
+.art { break-inside: avoid; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid var(--color-border); }
+.art__titular { font-family: var(--font-display); font-size: 17.5px; line-height: 1.18; font-weight: 700; }
+.art__titular a { text-decoration: none; transition: color .15s ease; }
+.art__titular a:hover { color: var(--alto-red); }
+.art__bajada { font-size: 13.5px; line-height: 1.45; color: var(--color-text-muted); margin-top: 6px; }
+.art__meta { margin-top: 9px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Recomendaciones por sector */
+.reco {
+  background: #EEF3FB; border-left: 2px solid var(--alto-blue);
+  padding: 11px 14px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.5;
+}
+.reco b {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--alto-blue); display: block; margin-bottom: 3px;
+}
+
+/* Hero */
+.hero { padding: 28px 0 26px; border-top: 1.5px solid var(--color-text); }
+.hero h1 { font-size: clamp(30px, 5vw, 50px); line-height: .98; letter-spacing: -.025em; }
+.hero h1 a { text-decoration: none; }
+.hero h1 a:hover { color: var(--alto-red); }
+.hero__bajada { font-size: 17px; line-height: 1.45; color: var(--color-text-muted); margin-top: 13px; max-width: 64ch; }
+.hero__meta { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* Resumen ejecutivo */
+.resumen {
+  background: var(--color-surface); padding: 18px 20px; border-radius: var(--radius-sm);
+  font-size: 14.5px; line-height: 1.55; color: var(--color-text);
+}
+.resumen b.lbl {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--alto-red); display: block; margin-bottom: 8px;
+}
+
+/* ---------- Variante B: tablero ----------------------------------------- */
+.panelwrap { max-width: 1000px; margin: 0 auto; padding: 0 40px 8px; }
+.b-top { display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px; margin-top: 24px; }
+@media (max-width: 760px) { .b-top { grid-template-columns: 1fr; } }
+.panel { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px 18px; background: #fff; }
+.panel h3 {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--alto-red); font-weight: 600; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.panel h3::before { content: ""; width: 14px; height: 2px; background: var(--alto-red); }
+.regiones { display: flex; flex-direction: column; gap: 0; }
+.region { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--color-border); font-size: 13px; }
+.region:first-child { border-top: 0; }
+.region .nom { font-weight: 600; min-width: 150px; font-family: var(--font-display); }
+.region .det { color: var(--color-text-muted); font-size: 12.5px; flex: 1; }
+.mapa {
+  background: linear-gradient(135deg, #E6EEF7 0%, #F4F1EB 100%);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: 22px 18px; text-align: center; margin-top: 14px;
+}
+.mapa .pin { font-size: 26px; }
+.mapa p { margin: 6px 0 10px; font-size: 12.5px; color: var(--color-text-muted); }
+.mapa a {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--alto-blue); font-weight: 700; text-decoration: none;
+  border: 1.5px solid var(--alto-blue); padding: 6px 12px; border-radius: var(--radius-sm);
+  display: inline-block; transition: all .15s ease;
+}
+.mapa a:hover { background: var(--alto-blue); color: #fff; }
+
+.filtros { display: flex; gap: 8px; margin: 26px 0 4px; flex-wrap: wrap; }
+.fbtn {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  padding: 6px 13px; border: 1px solid var(--color-border); background: #fff;
+  cursor: pointer; border-radius: var(--radius-sm); transition: all .15s ease; font-weight: 600;
+}
+.fbtn:hover { border-color: var(--color-text); }
+.fbtn.active { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+
+.inc { border-left: 3px solid var(--color-border); padding: 12px 0 12px 16px; border-bottom: 1px solid var(--color-border); transition: background .15s ease; }
+.inc:hover { background: #FAFAF8; }
+.inc--critico { border-left-color: var(--alto-red); }
+.inc--alto { border-left-color: #E89B44; }
+.inc--medio { border-left-color: var(--alto-blue); }
+.inc__cab { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.inc__titular { font-family: var(--font-display); font-size: 16.5px; font-weight: 700; line-height: 1.2; margin-top: 5px; }
+.inc__titular a { text-decoration: none; }
+.inc__titular a:hover { color: var(--alto-red); }
+.inc__resumen { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; line-height: 1.45; }
+.inc__meta { margin-top: 7px; display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+
+.descartados-toggle {
+  margin: 18px 0 0; background: none; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--color-text-faint); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; padding: 6px 0; transition: color .15s ease;
+}
+.descartados-toggle:hover { color: var(--alto-blue); }
+#descartados, #descartados-a { display: none; }
+.recogrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .recogrid { grid-template-columns: 1fr; } }
+
+/* ---------- Variante C: informe ----------------------------------------- */
+.c-titulo { padding: 26px 0 4px; border-top: 1.5px solid var(--color-text); }
+.c-titulo h1 { font-size: clamp(26px, 4vw, 38px); line-height: 1.04; letter-spacing: -.02em; }
+.c-titulo .sub {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--color-text-faint); margin-top: 10px;
+}
+.item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--color-border); }
+.item__num {
+  font-family: var(--font-display); font-weight: 800; font-size: 17px;
+  color: var(--alto-grey); min-width: 26px; text-align: right; line-height: 1.25;
+}
+.item__cuerpo { flex: 1; }
+.item__cab { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.item__titular { font-family: var(--font-display); font-size: 16.5px; font-weight: 700; line-height: 1.22; margin-top: 4px; }
+.item__titular a { text-decoration: none; }
+.item__titular a:hover { color: var(--alto-red); }
+.item__resumen { font-size: 13.5px; color: var(--color-text-muted); margin-top: 4px; line-height: 1.48; }
+.item__meta { margin-top: 7px; display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+.c-recos { counter-reset: reco; list-style: none; margin: 0; padding: 0; }
+.c-recos li {
+  counter-increment: reco; position: relative; padding: 10px 0 10px 34px;
+  border-top: 1px solid var(--color-border); font-size: 13.5px; line-height: 1.5;
+}
+.c-recos li:first-child { border-top: 0; }
+.c-recos li::before {
+  content: counter(reco); position: absolute; left: 0; top: 10px;
+  font-family: var(--font-display); font-weight: 800; color: var(--alto-red); font-size: 15px;
+}
+.c-recos b.sector {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--alto-blue); display: block; margin-bottom: 2px;
+}
+
+/* ---------- Barra de herramientas del sketch ----------------------------- */
+#sketch-tools {
+  position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+  font-family: system-ui; font-size: 12px; background: rgba(0,0,0,0.75); color: #fff;
+  padding: 8px 12px; border-radius: 8px; opacity: .35; transition: opacity .2s;
+  display: flex; gap: 8px; align-items: center;
+}
+#sketch-tools:hover { opacity: 1; }
+#sketch-tools button {
+  background: rgba(255,255,255,.15); color: #fff; border: none; border-radius: 4px;
+  padding: 4px 8px; cursor: pointer; font-size: 11px;
+}
+#sketch-tools button:hover { background: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <span class="lbl">Sketch 001 · Boletín Colombia</span>
+  <button class="variant-tab" onclick="showVariant('a', this)">A: Edición Editorial</button>
+  <button class="variant-tab active" onclick="showVariant('b', this)">B: Tablero de Inteligencia ★</button>
+  <button class="variant-tab" onclick="showVariant('c', this)">C: Informe Ejecutivo</button>
+</div>
+
+<!-- ================================================================== -->
+<!-- VARIANTE A · EDICIÓN EDITORIAL                                      -->
+<!-- El boletín como una edición del Barrido: hero, secciones, 2 cols.   -->
+<!-- Camino de menor resistencia: reusa la plantilla actual.             -->
+<!-- ================================================================== -->
+<div id="variant-a" class="variant">
+<div class="stage">
+
+  <header class="band">
+    <div class="band__inner">
+      <span class="band__logo">ALTO</span>
+      <div class="band__meta">
+        Barrido de Seguridad · Colombia<br>
+        <b>Edición · Jueves 12 de junio de 2026</b>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <a href="#">Edición de hoy</a>
+    <a href="#">Archivo</a>
+    <a href="#">Mapa de incidentes</a>
+  </nav>
+
+  <main>
+  <div class="diario">
+
+    <div class="hero">
+      <div class="kick">Alerta para clientes · Fundación, Magdalena</div>
+      <h1><a href="#">Panfleto anuncia paro armado de 24 horas: comercio bajo amenaza de cierre forzado</a></h1>
+      <p class="hero__bajada">Un panfleto atribuido a "Los Primos" exige el cierre de establecimientos y amenaza a comerciantes, personal médico y policías. La Policía reforzó la seguridad en el municipio. Para operaciones con puntos de venta en Fundación, es la alerta más accionable del período.</p>
+      <div class="hero__meta">
+        <span class="sev sev--critico">Crítico</span>
+        <span class="tagsec">Retail · Comercio</span>
+        <a class="fuente" href="#">Seguimiento.co</a>
+        <span class="loc">11 jun · Fundación, Magdalena</span>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">Tendencias · últimas 48 horas <span class="n">vs. semana previa</span></h2>
+      <div class="trends">
+        <div class="trend"><b class="t-up">▲ Secuestro</b><span>9 víctimas en 48 h (Segovia, Puebloviejo); 2 personas siguen retenidas</span></div>
+        <div class="trend"><b class="t-up">▲ Ataques a fuerza pública</b><span>11 militares heridos (drones en Chocó, combates en Nariño)</span></div>
+        <div class="trend"><b class="t-flat">▶ Extorsión</b><span>sostenida sobre el agro en Magdalena y Huila</span></div>
+        <div class="trend"><b class="t-up">▲ Paro armado</b><span>nuevo anuncio en Fundación, Magdalena</span></div>
+        <div class="trend"><b class="t-down">▼ Estructura "Iván Mordisco"</b><span>bombardeo en Ituango; Gobierno reporta desgaste</span></div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">I · Incidentes críticos <span class="n">4 de 23 capturados</span></h2>
+
+      <div class="critico">
+        <div class="critico__cab">
+          <span class="sev sev--critico">Crítico</span>
+          <span class="tagsec">Servicios · Ciudad</span>
+        </div>
+        <div class="critico__titular"><a href="#">ELN bloquea la recolección de basuras en Popayán bajo amenaza de incinerar vehículos</a></div>
+        <p class="critico__resumen">Hombres armados que se identificaron como ELN impidieron el paso de los camiones de aseo al relleno sanitario Los Picachos y amenazaron a los operarios. El servicio quedó suspendido.</p>
+        <div class="critico__impacto"><b>Impacto para clientes</b>Riesgo sanitario en Popayán y municipios vecinos si el bloqueo se prolonga. Operaciones con locales en la ciudad: prever acumulación de residuos y coordinar retiro privado.</div>
+        <div class="critico__meta">
+          <a class="fuente" href="#">Caracol Radio</a>
+          <span class="loc">11 jun · Popayán, Cauca</span>
+        </div>
+      </div>
+
+      <div class="critico">
+        <div class="critico__cab">
+          <span class="sev sev--critico">Crítico</span>
+          <span class="tagsec">Minería</span>
+        </div>
+        <div class="critico__titular"><a href="#">Secuestro en zona minera de Segovia: dos liberados, dos siguen retenidos</a></div>
+        <p class="critico__resumen">Dos de las cuatro personas secuestradas recuperaron la libertad tras más de un día de retención. El vehículo en que se movilizaban fue incinerado. Continúan los operativos de búsqueda.</p>
+        <div class="critico__impacto"><b>Impacto para clientes</b>Seguimiento del hecho desde el 10 jun. Restringir desplazamientos de personal a zonas mineras de Segovia–Remedios hasta nuevo aviso.</div>
+        <div class="critico__meta">
+          <a class="fuente" href="#">El Colombiano</a>
+          <span class="loc">11 jun · Segovia, Antioquia · Día 2 de seguimiento</span>
+        </div>
+      </div>
+
+      <div class="critico">
+        <div class="critico__cab">
+          <span class="sev sev--critico">Crítico</span>
+          <span class="tagsec">Logística · Pacífico</span>
+        </div>
+        <div class="critico__titular"><a href="#">Ataque con drones deja cinco militares de la Armada heridos en el Bajo Baudó</a></div>
+        <p class="critico__resumen">Explosivos lanzados desde drones hirieron a un suboficial y cuatro infantes de marina durante operaciones en Belén de Docampadó. Confirma capacidad de ataque aéreo de los grupos armados en el litoral.</p>
+        <div class="critico__impacto"><b>Impacto para clientes</b>Riesgo elevado para movimientos fluviales y costeros en el Pacífico chocoano. Reevaluar rutas y ventanas horarias.</div>
+        <div class="critico__meta">
+          <a class="fuente" href="#">Armada Nacional</a>
+          <span class="loc">11 jun · Bajo Baudó, Chocó</span>
+        </div>
+      </div>
+
+      <div class="critico">
+        <div class="critico__cab">
+          <span class="sev sev--critico">Crítico</span>
+          <span class="tagsec">Logística · Transporte</span>
+        </div>
+        <div class="critico__titular"><a href="#">Combates entre Ejército y disidencias dejan seis soldados heridos y comunidades confinadas</a></div>
+        <p class="critico__resumen">Enfrentamientos con la estructura Franco Benavides generaron confinamiento de comunidades rurales y restricciones de movilidad en Los Andes-Sotomayor.</p>
+        <div class="critico__impacto"><b>Impacto para clientes</b>Suspender rutas terciarias en el corredor Los Andes–Sotomayor; combates activos con restricción de movilidad declarada.</div>
+        <div class="critico__meta">
+          <a class="fuente" href="#">Ejército Nacional</a>
+          <span class="loc">11 jun · Los Andes-Sotomayor, Nariño</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">II · Barrido nacional <span class="n">ordenado por severidad</span></h2>
+      <div class="articulos">
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Bananeros del Magdalena denuncian escalada de extorsiones e incursiones armadas en fincas</a></div>
+          <p class="art__bajada">ASBAMA atribuye a las Autodefensas Conquistadoras de la Sierra retenciones, amenazas y robos contra trabajadores y productores. Varias fincas han visto afectada su operación.</p>
+          <div class="art__meta"><span class="sev sev--alto">Alto</span><span class="tagsec">Agro · Exportación</span><a class="fuente" href="#">ASBAMA · El Informador</a><span class="loc">Zona Bananera, Magdalena</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Extorsión habría costado $58.000 millones al sector cafetero del Huila</a></div>
+          <p class="art__bajada">Estudio académico estima pérdidas y caída de inversión por presión de redes criminales, concentradas en Algeciras, Villavieja y Yaguará.</p>
+          <div class="art__meta"><span class="sev sev--alto">Alto</span><span class="tagsec">Agro</span><a class="fuente" href="#">La Nación (Huila)</a><span class="loc">Huila</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Bombardeo en Ituango mata a alias "Ramiro", cabecilla de la Estructura 18, y a seis disidentes</a></div>
+          <p class="art__bajada">La operación aérea contra la facción de Iván Mordisco incluyó la captura de una integrante. "Ramiro" era investigado por homicidios, reclutamiento de menores y desplazamiento forzado.</p>
+          <div class="art__meta"><span class="sev sev--alto">Alto</span><span class="tagsec">Orden público</span><a class="fuente" href="#">Fuerzas Militares</a><span class="loc">11 jun · Ituango, Antioquia</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Disidencias del Frente 4 reconocen en video la masacre de Remedios</a></div>
+          <p class="art__bajada">Afirman que las víctimas colaboraban con el Clan del Golfo — versión no verificada de forma independiente. Confirma disputa territorial activa en el nordeste antioqueño.</p>
+          <div class="art__meta"><span class="sev sev--alto">Alto</span><span class="tagsec">Orden público</span><a class="fuente" href="#">El Colombiano</a><span class="loc">Remedios, Antioquia</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Combates entre ELN y Frente 33 desplazan a familias campesinas en Sardinata</a></div>
+          <p class="art__bajada">La disputa territorial en el corregimiento Las Mercedes obligó a varias familias a abandonar sus veredas para no quedar en medio de los enfrentamientos.</p>
+          <div class="art__meta"><span class="sev sev--alto">Alto</span><span class="tagsec">Logística</span><a class="fuente" href="#">La Opinión (Cúcuta)</a><span class="loc">Sardinata, N. de Santander</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Capturan a dos fleteros que esperaban a un cliente bancario tras retiro en Bogotá</a></div>
+          <p class="art__bajada">Una alerta ciudadana permitió interceptar el vehículo. Les incautaron un revólver calibre 38. La modalidad sigue activa en zonas bancarias de la capital.</p>
+          <div class="art__meta"><span class="sev sev--medio">Medio</span><span class="tagsec">Banca</span><a class="fuente" href="#">MEBOG</a><span class="loc">11 jun · Bogotá</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Agresión con martillo a guarda de seguridad en el Portal 20 de Julio de TransMilenio</a></div>
+          <p class="art__bajada">El agresor intentó evadir el pago y atacó al vigilante al ser requerido. El guarda resultó con lesiones no fatales; el responsable fue capturado en el lugar.</p>
+          <div class="art__meta"><span class="sev sev--medio">Medio</span><span class="tagsec">Seguridad privada</span><a class="fuente" href="#">El Tiempo</a><span class="loc">11 jun · Bogotá</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Secuestro temporal de cinco pescadores en la Ciénaga Grande termina con víctimas liberadas</a></div>
+          <p class="art__bajada">Hombres armados intimidaron a unos veinte pescadores y se llevaron una lancha con cinco ocupantes, entre ellos un menor. Fueron hallados con vida y la embarcación recuperada.</p>
+          <div class="art__meta"><span class="sev sev--medio">Medio</span><span class="tagsec">Pesca · Caribe</span><a class="fuente" href="#">Seguimiento.co</a><span class="loc">Puebloviejo, Magdalena</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Operación Rosario desarticula red que exportaba cocaína a Centroamérica y Europa</a></div>
+          <p class="art__bajada">Diez capturados, cuatro laboratorios destruidos y toneladas de cocaína incautadas en Norte de Santander.</p>
+          <div class="art__meta"><span class="sev sev--medio">Medio</span><span class="tagsec">Narcotráfico</span><a class="fuente" href="#">Policía Nacional</a><span class="loc">N. de Santander</span></div>
+        </article>
+
+        <article class="art">
+          <div class="art__titular"><a href="#">Gobierno reporta debilitamiento de "Iván Mordisco": más de 160 bajas en su círculo cercano</a></div>
+          <p class="art__bajada">El Ministerio de Defensa mantiene la recompensa y las operaciones de búsqueda. Posible reacomodo de estructuras en la Amazonía y el suroriente.</p>
+          <div class="art__meta"><span class="sev sev--info">Contexto</span><span class="tagsec">Orden público</span><a class="fuente" href="#">MinDefensa</a><span class="loc">Amazonía</span></div>
+        </article>
+
+      </div>
+
+      <button class="descartados-toggle" onclick="toggle('descartados-a', this)">▸ 2 hechos descartados por filtro de relevancia — ver</button>
+      <div id="descartados-a">
+        <article class="art" style="opacity:.55">
+          <div class="art__titular">Recuperan motocicleta con reporte de hurto en Cantagallo</div>
+          <div class="art__meta"><span class="sev sev--off">Descartado</span><span class="loc">Sin impacto para clientes · hecho policial menor</span></div>
+        </article>
+        <article class="art" style="opacity:.55">
+          <div class="art__titular">Capturan a dos expendedores con 1.900 g de marihuana en Riohacha</div>
+          <div class="art__meta"><span class="sev sev--off">Descartado</span><span class="loc">Microtráfico local · sin relevancia sectorial</span></div>
+        </article>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">III · Recomendaciones para clientes</h2>
+      <div class="reco"><b>Retail y comercio · Fundación, Magdalena</b>Ante el paro armado anunciado, evaluar cierre preventivo o jornada reducida en las próximas 24–48 h; coordinar apertura con la Policía local y mantener canal directo con el personal en terreno.</div>
+      <div class="reco"><b>Banca · Bogotá</b>El fleteo sigue activo pese a las capturas: reforzar protocolos de retiro seguro en sucursales de alto flujo y acompañamiento para retiros de montos altos.</div>
+      <div class="reco"><b>Agro y exportación · Magdalena, Huila</b>Extorsión en escalada: activar protocolo de extorsión, centralizar denuncias vía GAULA y revisar seguridad de rutas de cosecha y personal de fincas.</div>
+      <div class="reco"><b>Logística · Nariño, Chocó, N. de Santander</b>Combates activos y ataque con drones: suspender rutas terciarias en Los Andes-Sotomayor, Sardinata y Bajo Baudó; desplazamientos solo en ventanas diurnas con check-in.</div>
+      <div class="reco"><b>Seguridad privada · Bogotá</b>Tras la agresión en TransMilenio, reforzar protocolos de desescalamiento y botón de pánico para guardas en sistemas de transporte masivo.</div>
+    </div>
+
+  </div>
+  </main>
+
+  <footer class="pie">
+    <div class="pie__inner">
+      <span><b>ALTO</b> · Barrido de Seguridad Colombia</span>
+      <span class="tag">Jueves 12 de junio de 2026 · Uso interno</span>
+    </div>
+  </footer>
+
+</div>
+</div>
+
+<!-- ================================================================== -->
+<!-- VARIANTE B · TABLERO DE INTELIGENCIA                                -->
+<!-- Riesgo primero: semáforo, tendencias, lista filtrable por severidad -->
+<!-- ================================================================== -->
+<div id="variant-b" class="variant active">
+<div class="stage">
+
+  <header class="band">
+    <div class="band__inner">
+      <span class="band__logo">ALTO</span>
+      <div class="band__meta">
+        Inteligencia de Seguridad · Colombia<br>
+        <b>Boletín 163 · 11–12 de junio de 2026</b>
+      </div>
+    </div>
+  </header>
+
+  <div class="panelwrap">
+
+    <div class="b-top">
+      <div class="panel">
+        <h3>Balance regional</h3>
+        <div class="regiones">
+          <div class="region"><span class="sev sev--critico">Crítico</span><span class="nom">Cauca</span><span class="det">ELN bloquea servicio de aseo en Popayán; riesgo sanitario</span></div>
+          <div class="region"><span class="sev sev--critico">Crítico</span><span class="nom">Nordeste antioqueño</span><span class="det">Secuestro activo en Segovia; masacre reconocida en Remedios</span></div>
+          <div class="region"><span class="sev sev--alto">Alto</span><span class="nom">Magdalena</span><span class="det">Paro armado anunciado; extorsión a bananeros</span></div>
+          <div class="region"><span class="sev sev--alto">Alto</span><span class="nom">Nariño · Chocó</span><span class="det">Combates y ataque con drones; movilidad restringida</span></div>
+          <div class="region"><span class="sev sev--medio">Medio</span><span class="nom">Bogotá</span><span class="det">Fleteo activo; agresión en TransMilenio</span></div>
+          <div class="region"><span class="sev sev--info">Monitoreo</span><span class="nom">Amazonía</span><span class="det">Posible reacomodo de estructuras de "Iván Mordisco"</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Tendencias 48 h</h3>
+        <div class="trends" style="flex-direction:column; gap:6px;">
+          <div class="trend"><b class="t-up">▲ Secuestro</b><span>9 víctimas; 2 retenidas</span></div>
+          <div class="trend"><b class="t-up">▲ Ataques a FF.PP.</b><span>11 militares heridos</span></div>
+          <div class="trend"><b class="t-flat">▶ Extorsión</b><span>sostenida en Magdalena y Huila</span></div>
+          <div class="trend"><b class="t-up">▲ Paro armado</b><span>anuncio en Fundación</span></div>
+        </div>
+        <div class="mapa">
+          <div class="pin">📍</div>
+          <p>23 incidentes georreferenciados<br>en 11 departamentos</p>
+          <a href="#">Ver mapa interactivo</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <button class="fbtn active" onclick="filtrar('todos', this)">Todos · 12</button>
+      <button class="fbtn" onclick="filtrar('critico', this)">Crítico · 5</button>
+      <button class="fbtn" onclick="filtrar('alto', this)">Alto · 4</button>
+      <button class="fbtn" onclick="filtrar('medio', this)">Medio · 3</button>
+    </div>
+
+    <div id="lista-incidentes">
+
+      <div class="inc inc--critico" data-sev="critico">
+        <div class="inc__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Retail · Comercio</span></div>
+        <div class="inc__titular"><a href="#">Panfleto de "Los Primos" anuncia paro armado de 24 horas y exige cierre de comercios</a></div>
+        <p class="inc__resumen">Amenazas a comerciantes, personal médico y policías en Fundación. Seguridad reforzada en el municipio.</p>
+        <div class="inc__meta"><a class="fuente" href="#">Seguimiento.co</a><span class="loc">11 jun · Fundación, Magdalena</span></div>
+      </div>
+
+      <div class="inc inc--critico" data-sev="critico">
+        <div class="inc__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Servicios</span></div>
+        <div class="inc__titular"><a href="#">ELN bloquea recolección de basuras en Popayán bajo amenaza de quemar vehículos</a></div>
+        <p class="inc__resumen">Operarios interceptados camino al relleno Los Picachos. Servicio suspendido; riesgo sanitario para la ciudad.</p>
+        <div class="inc__meta"><a class="fuente" href="#">Caracol Radio</a><span class="loc">11 jun · Popayán, Cauca</span></div>
+      </div>
+
+      <div class="inc inc--critico" data-sev="critico">
+        <div class="inc__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Minería</span></div>
+        <div class="inc__titular"><a href="#">Secuestro en zona minera de Segovia: dos liberados, dos siguen retenidos</a></div>
+        <p class="inc__resumen">Vehículo incinerado; operativos de búsqueda en curso. Día 2 de seguimiento del hecho.</p>
+        <div class="inc__meta"><a class="fuente" href="#">El Colombiano</a><span class="loc">11 jun · Segovia, Antioquia</span></div>
+      </div>
+
+      <div class="inc inc--critico" data-sev="critico">
+        <div class="inc__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Logística · Pacífico</span></div>
+        <div class="inc__titular"><a href="#">Ataque con drones hiere a cinco militares de la Armada en el Bajo Baudó</a></div>
+        <p class="inc__resumen">Explosivos lanzados desde drones en Belén de Docampadó. Capacidad de ataque aéreo confirmada en el litoral.</p>
+        <div class="inc__meta"><a class="fuente" href="#">Armada Nacional</a><span class="loc">11 jun · Bajo Baudó, Chocó</span></div>
+      </div>
+
+      <div class="inc inc--critico" data-sev="critico">
+        <div class="inc__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Logística</span></div>
+        <div class="inc__titular"><a href="#">Combates Ejército–disidencias dejan seis soldados heridos y comunidades confinadas</a></div>
+        <p class="inc__resumen">Restricciones de movilidad en Los Andes-Sotomayor por enfrentamientos con la estructura Franco Benavides.</p>
+        <div class="inc__meta"><a class="fuente" href="#">Ejército Nacional</a><span class="loc">11 jun · Nariño</span></div>
+      </div>
+
+      <div class="inc inc--alto" data-sev="alto">
+        <div class="inc__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Agro · Exportación</span></div>
+        <div class="inc__titular"><a href="#">ASBAMA denuncia escalada de extorsiones e incursiones armadas en fincas bananeras</a></div>
+        <p class="inc__resumen">Retenciones, amenazas y robos atribuidos a las ACSN afectan la operación de varias fincas.</p>
+        <div class="inc__meta"><a class="fuente" href="#">El Informador</a><span class="loc">Zona Bananera, Magdalena</span></div>
+      </div>
+
+      <div class="inc inc--alto" data-sev="alto">
+        <div class="inc__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Agro</span></div>
+        <div class="inc__titular"><a href="#">Extorsión habría costado $58.000 millones al sector cafetero del Huila</a></div>
+        <p class="inc__resumen">Pérdidas concentradas en Algeciras, Villavieja y Yaguará, según estudio académico.</p>
+        <div class="inc__meta"><a class="fuente" href="#">La Nación</a><span class="loc">Huila</span></div>
+      </div>
+
+      <div class="inc inc--alto" data-sev="alto">
+        <div class="inc__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Orden público</span></div>
+        <div class="inc__titular"><a href="#">Bombardeo en Ituango mata a cabecilla "Ramiro" y seis disidentes de la Estructura 18</a></div>
+        <p class="inc__resumen">Operación aérea contra la facción de Iván Mordisco; una integrante capturada.</p>
+        <div class="inc__meta"><a class="fuente" href="#">FF.MM.</a><span class="loc">11 jun · Ituango, Antioquia</span></div>
+      </div>
+
+      <div class="inc inc--alto" data-sev="alto">
+        <div class="inc__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Logística</span></div>
+        <div class="inc__titular"><a href="#">Combates ELN–Frente 33 desplazan a familias campesinas en Sardinata</a></div>
+        <p class="inc__resumen">Disputa territorial en Las Mercedes obliga a desplazamientos para evitar el fuego cruzado.</p>
+        <div class="inc__meta"><a class="fuente" href="#">La Opinión</a><span class="loc">N. de Santander</span></div>
+      </div>
+
+      <div class="inc inc--medio" data-sev="medio">
+        <div class="inc__cab"><span class="sev sev--medio">Medio</span><span class="tagsec">Banca</span></div>
+        <div class="inc__titular"><a href="#">Capturan a dos fleteros que esperaban a un cliente bancario en Bogotá</a></div>
+        <p class="inc__resumen">Modalidad activa en zonas bancarias; revólver calibre 38 incautado.</p>
+        <div class="inc__meta"><a class="fuente" href="#">MEBOG</a><span class="loc">11 jun · Bogotá</span></div>
+      </div>
+
+      <div class="inc inc--medio" data-sev="medio">
+        <div class="inc__cab"><span class="sev sev--medio">Medio</span><span class="tagsec">Seguridad privada</span></div>
+        <div class="inc__titular"><a href="#">Agresión con martillo a guarda de TransMilenio en el Portal 20 de Julio</a></div>
+        <p class="inc__resumen">Evasor atacó al vigilante al ser requerido; lesiones no fatales y agresor capturado.</p>
+        <div class="inc__meta"><a class="fuente" href="#">El Tiempo</a><span class="loc">11 jun · Bogotá</span></div>
+      </div>
+
+      <div class="inc inc--medio" data-sev="medio">
+        <div class="inc__cab"><span class="sev sev--medio">Medio</span><span class="tagsec">Narcotráfico</span></div>
+        <div class="inc__titular"><a href="#">Operación Rosario desarticula red de exportación de cocaína a Centroamérica y Europa</a></div>
+        <p class="inc__resumen">Diez capturados y cuatro laboratorios destruidos en Norte de Santander.</p>
+        <div class="inc__meta"><a class="fuente" href="#">Policía Nacional</a><span class="loc">N. de Santander</span></div>
+      </div>
+
+    </div>
+
+    <button class="descartados-toggle" onclick="toggle('descartados', this)">▸ 2 hechos descartados por filtro de relevancia — ver</button>
+    <div id="descartados">
+      <div class="inc" data-sev="off" style="opacity:.55">
+        <div class="inc__cab"><span class="sev sev--off">Descartado</span></div>
+        <div class="inc__titular">Recuperan motocicleta con reporte de hurto en Cantagallo</div>
+        <div class="inc__meta"><span class="loc">Hecho policial menor · sin impacto para clientes</span></div>
+      </div>
+      <div class="inc" data-sev="off" style="opacity:.55">
+        <div class="inc__cab"><span class="sev sev--off">Descartado</span></div>
+        <div class="inc__titular">Capturan a dos expendedores con 1.900 g de marihuana en Riohacha</div>
+        <div class="inc__meta"><span class="loc">Microtráfico local · sin relevancia sectorial</span></div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">Recomendaciones por sector</h2>
+      <div class="recogrid">
+        <div class="reco"><b>Retail · Fundación</b>Evaluar cierre preventivo o jornada reducida 24–48 h por paro armado anunciado; coordinar con Policía local.</div>
+        <div class="reco"><b>Banca · Bogotá</b>Reforzar retiro seguro en sucursales de alto flujo; fleteo activo pese a capturas.</div>
+        <div class="reco"><b>Agro · Magdalena, Huila</b>Activar protocolo de extorsión; centralizar denuncias vía GAULA; revisar rutas de cosecha.</div>
+        <div class="reco"><b>Logística · Nariño, Chocó, N. Santander</b>Suspender rutas terciarias en zonas de combate; desplazamientos diurnos con check-in.</div>
+        <div class="reco"><b>Seguridad privada · Bogotá</b>Reforzar desescalamiento y botón de pánico para guardas en transporte masivo.</div>
+        <div class="reco"><b>Minería · Nordeste antioqueño</b>Restringir desplazamientos a Segovia–Remedios; secuestro activo con 2 personas retenidas.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="pie">
+    <div class="pie__inner">
+      <span><b>ALTO</b> · Inteligencia de Seguridad Colombia</span>
+      <span class="tag">Boletín 163 · Uso interno</span>
+    </div>
+  </footer>
+
+</div>
+</div>
+
+<!-- ================================================================== -->
+<!-- VARIANTE C · INFORME EJECUTIVO                                      -->
+<!-- Flujo familiar al ARES: resumen → numerados → balance → recos       -->
+<!-- ================================================================== -->
+<div id="variant-c" class="variant">
+<div class="stage">
+
+  <header class="band">
+    <div class="band__inner">
+      <span class="band__logo">ALTO</span>
+      <div class="band__meta">
+        Boletín Diario de Seguridad · Colombia<br>
+        <b>Boletín 163 · 11–12 de junio de 2026</b>
+      </div>
+    </div>
+  </header>
+
+  <div class="diario">
+
+    <div class="c-titulo">
+      <h1>Boletín Diario de Seguridad Nacional</h1>
+      <div class="sub">Incidentes y alertas · ordenados por severidad · 12 hechos relevantes de 23 capturados</div>
+    </div>
+
+    <div class="seccion" style="border-top:none; margin-top:20px; padding-top:0;">
+      <div class="resumen">
+        <b class="lbl">Resumen ejecutivo</b>
+        Las últimas 48 horas combinan presión armada sobre servicios esenciales (el ELN bloquea la recolección de basuras en Popayán), un secuestro en zona minera de Segovia con dos personas aún retenidas, y una escalada extorsiva sobre el agro en Magdalena y Huila. En lo urbano, Bogotá mantiene actividad de fleteo y una agresión a personal de vigilancia en TransMilenio. El Gobierno reporta debilitamiento de la estructura de "Iván Mordisco" tras el bombardeo en Ituango. <b>Para clientes: el anuncio de paro armado en Fundación (Magdalena) es la alerta más accionable del período.</b>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">Incidentes del período <span class="n">11–12 jun</span></h2>
+
+      <div class="item">
+        <div class="item__num">1</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Retail</span></div>
+          <div class="item__titular"><a href="#">Panfleto anuncia paro armado de 24 horas y exige cierre de comercios — Fundación, Magdalena</a></div>
+          <p class="item__resumen">Panfleto atribuido a "Los Primos" amenaza a comerciantes, personal médico y policías. Las autoridades reforzaron la seguridad en el municipio.</p>
+          <div class="item__meta"><a class="fuente" href="#">Seguimiento.co</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">2</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Servicios</span></div>
+          <div class="item__titular"><a href="#">ELN bloquea la recolección de basuras bajo amenaza de incinerar vehículos — Popayán, Cauca</a></div>
+          <p class="item__resumen">Hombres armados impidieron el paso al relleno sanitario Los Picachos y amenazaron a los operarios. Riesgo sanitario si el bloqueo se prolonga.</p>
+          <div class="item__meta"><a class="fuente" href="#">Caracol Radio</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">3</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Minería</span></div>
+          <div class="item__titular"><a href="#">Secuestro en zona minera: dos liberados, dos siguen retenidos — Segovia, Antioquia</a></div>
+          <p class="item__resumen">El vehículo de las víctimas fue incinerado. Operativos de búsqueda continúan. Seguimiento desde el 10 de junio.</p>
+          <div class="item__meta"><a class="fuente" href="#">El Colombiano</a><span class="loc">11 jun · Día 2</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">4</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--critico">Crítico</span><span class="tagsec">Logística</span></div>
+          <div class="item__titular"><a href="#">Ataque con drones deja cinco militares heridos — Bajo Baudó, Chocó</a></div>
+          <p class="item__resumen">Explosivos lanzados desde drones contra la Armada en Belén de Docampadó confirman capacidad aérea de los grupos armados en el Pacífico.</p>
+          <div class="item__meta"><a class="fuente" href="#">Armada Nacional</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">5</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Agro</span></div>
+          <div class="item__titular"><a href="#">Bananeros denuncian escalada de extorsiones e incursiones armadas — Zona Bananera, Magdalena</a></div>
+          <p class="item__resumen">ASBAMA atribuye a las ACSN retenciones, amenazas y robos que afectan la operación de varias fincas.</p>
+          <div class="item__meta"><a class="fuente" href="#">El Informador</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">6</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--alto">Alto</span><span class="tagsec">Orden público</span></div>
+          <div class="item__titular"><a href="#">Bombardeo mata a alias "Ramiro" y seis disidentes de la Estructura 18 — Ituango, Antioquia</a></div>
+          <p class="item__resumen">Operación aérea contra la facción de Iván Mordisco. "Ramiro" era investigado por homicidios, reclutamiento de menores y desplazamiento forzado.</p>
+          <div class="item__meta"><a class="fuente" href="#">Fuerzas Militares</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="item__num">7</div>
+        <div class="item__cuerpo">
+          <div class="item__cab"><span class="sev sev--medio">Medio</span><span class="tagsec">Banca</span></div>
+          <div class="item__titular"><a href="#">Capturan a dos fleteros que esperaban a un cliente bancario — Bogotá</a></div>
+          <p class="item__resumen">Alerta ciudadana permitió la interceptación; revólver calibre 38 incautado. La modalidad sigue activa.</p>
+          <div class="item__meta"><a class="fuente" href="#">MEBOG</a><span class="loc">11 jun</span></div>
+        </div>
+      </div>
+
+      <div class="item" style="border-bottom:none;">
+        <div class="item__num">…</div>
+        <div class="item__cuerpo">
+          <p class="item__resumen" style="font-style:italic; margin-top:2px;">+ 5 incidentes adicionales de severidad media y de contexto (mismo formato), ordenados por severidad y luego por región.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">Balance regional</h2>
+      <div class="trends">
+        <div class="trend"><span class="sev sev--critico">Crítico</span><span><b>Cauca</b> · bloqueo de aseo en Popayán</span></div>
+        <div class="trend"><span class="sev sev--critico">Crítico</span><span><b>Nordeste antioqueño</b> · secuestro activo</span></div>
+        <div class="trend"><span class="sev sev--alto">Alto</span><span><b>Magdalena</b> · paro armado y extorsión</span></div>
+        <div class="trend"><span class="sev sev--alto">Alto</span><span><b>Nariño / Chocó</b> · combates y drones</span></div>
+        <div class="trend"><span class="sev sev--medio">Medio</span><span><b>Bogotá</b> · fleteo y transporte masivo</span></div>
+        <div class="trend"><span class="sev sev--info">Monitoreo</span><span><b>Amazonía</b> · reacomodo de disidencias</span></div>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2 class="seclbl">Recomendaciones para clientes</h2>
+      <ol class="c-recos">
+        <li><b class="sector">Retail y comercio · Fundación</b>Evaluar cierre preventivo o jornada reducida durante las próximas 24–48 h ante el paro armado anunciado; coordinar apertura con la Policía local.</li>
+        <li><b class="sector">Banca · Bogotá</b>Reforzar protocolos de retiro seguro en sucursales de alto flujo; el fleteo sigue activo pese a las capturas.</li>
+        <li><b class="sector">Agro y exportación · Magdalena, Huila</b>Activar protocolo de extorsión, centralizar denuncias vía GAULA y revisar la seguridad de rutas de cosecha.</li>
+        <li><b class="sector">Logística · Nariño, Chocó, N. de Santander</b>Suspender rutas terciarias en zonas de combate; programar desplazamientos en ventanas diurnas con check-in.</li>
+        <li><b class="sector">Minería · Nordeste antioqueño</b>Restringir desplazamientos de personal a Segovia–Remedios mientras el secuestro siga activo.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <footer class="pie">
+    <div class="pie__inner">
+      <span><b>ALTO</b> · Boletín de Seguridad Colombia</span>
+      <span class="tag">Boletín 163 · 12 jun 2026 · Uso interno</span>
+    </div>
+  </footer>
+
+</div>
+</div>
+
+<!-- Barra de herramientas del sketch -->
+<div id="sketch-tools">
+  <span>Viewport:</span>
+  <button onclick="setViewport('375px')">📱 375</button>
+  <button onclick="setViewport('768px')">💻 768</button>
+  <button onclick="setViewport('none')">🖥 Full</button>
+</div>
+
+<script>
+function showVariant(id, btn) {
+  document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function setViewport(w) {
+  document.querySelectorAll('.stage').forEach(s => s.style.maxWidth = w === 'none' ? '' : w);
+}
+function filtrar(sev, btn) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#lista-incidentes .inc').forEach(el => {
+    el.style.display = (sev === 'todos' || el.dataset.sev === sev) ? '' : 'none';
+  });
+}
+function toggle(id, btn) {
+  const el = document.getElementById(id);
+  const visible = el.style.display === 'block';
+  el.style.display = visible ? 'none' : 'block';
+  btn.textContent = (visible ? '▸' : '▾') + btn.textContent.slice(1);
+}
+</script>
+
+</body>
+</html>
