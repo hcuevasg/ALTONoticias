@@ -60,6 +60,44 @@ var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "ALTO Chile" OR "fiscalía pri
 // estudio "ALTO-PUCV..." que la query precisa no trae. La IA filtra falsos positivos.
 var QUERY_ALTO_ANCLADA = 'ALTO ("Eduardo Hernández" OR "Rodrigo Varela" OR PUCV OR "prevención de pérdidas" OR "prevención del delito")';
 var DIAS_ALTO = 2;
+// Bing News como 2º índice para "ALTO en la Prensa": pesca menciones que Google News no
+// rankea o no trae. Bing NO soporta when:Nd → la recencia la impone esReciente_ (48h).
+// OJO: tampoco alcanza contenido de PAGO/impreso (igual que Google News). Poné false p/desactivar.
+var ALTO_BING_ACTIVO = true;
+// Ingesta por correo para "ALTO en la Prensa" (Google Alerts / alerta El Mercurio / clipping
+// / reenvíos). Lee la etiqueta de Gmail definida en CorreoAlto.gs. Poné false p/desactivar.
+var CORREO_ALTO_ACTIVO = true;
+// Búsqueda web (Google Programmable Search) para "ALTO en la Prensa": pesca rebotes libres
+// que News/Bing no indexan. DESACTIVADO: Google ya no permite habilitar "buscar en toda la
+// web" en motores nuevos, y Google Alerts (que llega por correo vía CorreoAlto.gs) cubre el
+// mismo caso. Para usarlo igual (restringido a dominios): poné true + GOOGLE_CSE_KEY/CX.
+var CSE_ALTO_ACTIVO = false;
+
+// ── Medios prioritarios (paywall, titulares públicos) ──────────────────────
+// El cliente pidió sumar El Mercurio/Emol, La Tercera y DF a TODAS las secciones.
+// El ARTÍCULO completo es de pago, pero los TITULARES son públicos y están indexados
+// en Google News — que es justo lo que consume el boletín. NO requiere login.
+// Para garantizar su presencia (una búsqueda amplia no siempre los rankea arriba),
+// por cada sección lanzamos queries "espejo" restringidas a estos dominios con el
+// operador site:. El dedup posterior (por URL y por titular) funde lo que ya hayan
+// traído las queries amplias, así que no se duplican notas.
+// Login automático de pago: solo El Mercurio es viable (formulario ASP.NET) y está en
+// MercurioLogin.gs como experimento aparte. La Tercera (Piano) y DF (SPA) usan auth por
+// JavaScript que UrlFetchApp no puede ejecutar → solo cobertura pública.
+// Poné MEDIOS_PRIORITARIOS_ACTIVO = false para desactivar todo el bloque.
+var MEDIOS_PRIORITARIOS_ACTIVO = true;
+var MEDIOS_PRIORITARIOS = [
+  { etiqueta: 'El Mercurio', dominios: ['emol.com', 'elmercurio.com'] },
+  { etiqueta: 'La Tercera',  dominios: ['latercera.com'] },
+  { etiqueta: 'DF',          dominios: ['df.cl'] }
+];
+var DIAS_PRIORITARIO = 2; // ventana de la query "general" (lo último de cada medio)
+// Anclas temáticas para la query "general" de medios prioritarios: en vez de traer el
+// feed COMPLETO del medio (deporte, tecnología, farándula), lo acota a lo relevante para
+// el brief (Chile/política/economía/seguridad). Poné '' para volver al feed completo.
+var TERMINOS_GENERAL_PRIORITARIO =
+  'economía OR negocios OR empresas OR política OR gobierno OR seguridad OR ' +
+  'delincuencia OR delito OR fraude OR justicia OR fiscalía OR mercado';
 
 function test() {
   Logger.log('=== Prueba de fuentes (taxonomía) ===');
@@ -72,6 +110,21 @@ function test() {
     conteo[sec] = (conteo[sec] || 0) + 1;
   }
   Logger.log('Por sección: %s', JSON.stringify(conteo));
+
+  // Conteo por medio prioritario (por nombre de fuente del feed) — confirma que los
+  // tres entran al corpus, sobre todo El Mercurio/Emol.
+  var patronesMedio = [
+    { etiqueta: 'El Mercurio/Emol', re: /emol|mercurio/i },
+    { etiqueta: 'La Tercera',       re: /tercera/i },
+    { etiqueta: 'DF',               re: /financiero|\bdf\b/i }
+  ];
+  var conteoMedios = {};
+  patronesMedio.forEach(function (p) { conteoMedios[p.etiqueta] = 0; });
+  for (var m = 0; m < articulos.length; m++) {
+    var f = articulos[m].fuente || '';
+    patronesMedio.forEach(function (p) { if (p.re.test(f)) conteoMedios[p.etiqueta]++; });
+  }
+  Logger.log('Medios prioritarios (por fuente): %s', JSON.stringify(conteoMedios));
 
   var n = Math.min(articulos.length, TOPE_LOG_TEST);
   for (var k = 0; k < n; k++) {
@@ -107,6 +160,25 @@ function recolectarTitulares() {
     }
   }
 
+  // Ingesta por correo (sección 'alto'): se suma ANTES del dedup para fundir solapamientos
+  // con Google News / Bing. Falla suave si no hay etiqueta/permiso de Gmail.
+  if (CORREO_ALTO_ACTIVO) {
+    var deCorreo = recolectarCorreoAlto_();
+    if (deCorreo.length) {
+      Logger.log('  + %s titulares desde correo (sección alto)', deCorreo.length);
+      todos = todos.concat(deCorreo);
+    }
+  }
+
+  // Búsqueda web (CSE): rebotes libres de menciones de ALTO que News/Bing no indexan.
+  if (CSE_ALTO_ACTIVO) {
+    var deCSE = recolectarCSEAlto_();
+    if (deCSE.length) {
+      Logger.log('  + %s titulares desde búsqueda web (sección alto)', deCSE.length);
+      todos = todos.concat(deCSE);
+    }
+  }
+
   var unicos = deduplicar_(todos);
   Logger.log('Ítems %s → únicos %s (−%s dup)', todos.length, unicos.length, todos.length - unicos.length);
   return unicos;
@@ -120,6 +192,8 @@ function leerFuentesDelSheet_() {
   if (!ss) return [];
 
   var specs = [];
+  var terminosDelictual = [];   // se reúsan para las queries "espejo" de medios prioritarios
+  var terminosTendencia = [];
 
   // 1) Prensa general (sección Chile/política): la URL se usa tal cual.
   recorrerHoja_(ss, 'FuentesGenerales', function (fila) {
@@ -131,15 +205,21 @@ function leerFuentesDelSheet_() {
   // 2) Temas delictuales (sección delictual pública): query when:2d.
   recorrerHoja_(ss, 'TemasDelictuales', function (fila) {
     var t = String(fila[1] || '').trim();
-    if (t) specs.push({ url: urlGoogleNews_(t, DIAS_DELICTUAL), etiqueta: String(fila[0] || 'Delictual').trim(),
-                        seccion: 'delictual', industria: '', cliente: '' });
+    if (t) {
+      terminosDelictual.push(t);
+      specs.push({ url: urlGoogleNews_(t, DIAS_DELICTUAL), etiqueta: String(fila[0] || 'Delictual').trim(),
+                   seccion: 'delictual', industria: '', cliente: '' });
+    }
   });
 
   // 3) Tendencias / nuevos modus operandi (sin cliente): query when:2d.
   recorrerHoja_(ss, 'Tendencias', function (fila) {
     var t = orTerminos_(fila[1]);
-    if (t) specs.push({ url: urlGoogleNews_(t, DIAS_TENDENCIA), etiqueta: String(fila[0] || 'Tendencia').trim(),
-                        seccion: 'tendencia', industria: '', cliente: '' });
+    if (t) {
+      terminosTendencia.push(t);
+      specs.push({ url: urlGoogleNews_(t, DIAS_TENDENCIA), etiqueta: String(fila[0] || 'Tendencia').trim(),
+                   seccion: 'tendencia', industria: '', cliente: '' });
+    }
   });
 
   // 4) Amenazas por industria → mapa industria → '(t1 OR t2 …)'.
@@ -186,6 +266,60 @@ function leerFuentesDelSheet_() {
                seccion: 'alto', industria: '', cliente: '' });
   specs.push({ url: urlGoogleNews_(QUERY_ALTO_ANCLADA, DIAS_ALTO), etiqueta: 'ALTO',
                seccion: 'alto', industria: '', cliente: '' });
+  // Bing News como 2º índice (solo query precisa; el dedup funde el solapamiento con Google).
+  if (ALTO_BING_ACTIVO) {
+    specs.push({ url: urlBingNews_(QUERY_ALTO), etiqueta: 'ALTO',
+                 seccion: 'alto', industria: '', cliente: '' });
+  }
+
+  // 7) Medios prioritarios: queries "espejo" con site: para asegurar que El Mercurio,
+  //    La Tercera y DF aparezcan en TODAS las secciones (titulares públicos, sin login).
+  //    El dedup por URL/titular funde lo que ya hayan traído las queries amplias.
+  if (MEDIOS_PRIORITARIOS_ACTIVO) {
+    var sitios = clausulaSitiosPrioritarios_();   // (site:emol.com OR site:latercera.com OR …)
+
+    // a) General: lo relevante de cada medio (una query por medio para conservar su
+    //    etiqueta). Anclada a TERMINOS_GENERAL_PRIORITARIO para no traer el feed completo.
+    var anclaGeneral = TERMINOS_GENERAL_PRIORITARIO
+      ? '(' + TERMINOS_GENERAL_PRIORITARIO + ') ' : '';
+    MEDIOS_PRIORITARIOS.forEach(function (m) {
+      var soloEste = '(' + m.dominios.map(function (d) { return 'site:' + d; }).join(' OR ') + ')';
+      specs.push({ url: urlGoogleNews_(anclaGeneral + soloEste, DIAS_PRIORITARIO), etiqueta: m.etiqueta,
+                   seccion: 'general', industria: '', cliente: '' });
+    });
+
+    // b) Delictual: todos los temas en UNA query espejo restringida a los medios.
+    //    (Si TemasDelictuales crece mucho, esta única query podría requerir chunking.)
+    if (terminosDelictual.length) {
+      var qDel = '(' + terminosDelictual.map(parentizar_).join(' OR ') + ') ' + sitios;
+      specs.push({ url: urlGoogleNews_(qDel, DIAS_DELICTUAL), etiqueta: 'Delictual · medios',
+                   seccion: 'delictual', industria: '', cliente: '' });
+    }
+
+    // c) Tendencias: ídem.
+    if (terminosTendencia.length) {
+      var qTen = '(' + terminosTendencia.map(parentizar_).join(' OR ') + ') ' + sitios;
+      specs.push({ url: urlGoogleNews_(qTen, DIAS_TENDENCIA), etiqueta: 'Tendencia · medios',
+                   seccion: 'tendencia', industria: '', cliente: '' });
+    }
+
+    // d) Clientes: una query espejo por industria (clientes × amenaza × medios), chunkeada
+    //    igual que las normales y conservando los filtros de precisión (cliente en titular,
+    //    solo Chile) vía terminosCliente.
+    Object.keys(clientesPorInd).forEach(function (ind) {
+      var amenaza = amenazasPorInd[ind];
+      if (!amenaza) return;
+      var terms = clientesPorInd[ind];
+      for (var c = 0; c < terms.length; c += CLIENTES_POR_QUERY) {
+        var chunk = terms.slice(c, c + CLIENTES_POR_QUERY);
+        var q = '(' + chunk.join(' OR ') + ') ' + amenaza + ' ' + sitios;
+        var terminosCliente = chunk.map(function (t) { return t.replace(/"/g, '').trim(); });
+        specs.push({ url: urlGoogleNews_(q, DIAS_CLIENTES), etiqueta: ind + ' · medios',
+                     seccion: 'clientes', industria: ind, cliente: '',
+                     terminosCliente: terminosCliente });
+      }
+    });
+  }
 
   return specs;
 }
@@ -232,11 +366,33 @@ function orTerminos_(csv) {
   return partes.join(' OR ');
 }
 
+/** '(site:emol.com OR site:elmercurio.com OR site:latercera.com OR site:df.cl)' de MEDIOS_PRIORITARIOS. */
+function clausulaSitiosPrioritarios_() {
+  var sitios = [];
+  MEDIOS_PRIORITARIOS.forEach(function (m) {
+    m.dominios.forEach(function (d) { sitios.push('site:' + d); });
+  });
+  return sitios.length ? '(' + sitios.join(' OR ') + ')' : '';
+}
+
+/** Envuelve una expresión de términos en paréntesis si aún no lo está. */
+function parentizar_(s) {
+  s = String(s || '').trim();
+  return /^\(.*\)$/.test(s) ? s : '(' + s + ')';
+}
+
 /** URL de búsqueda de Google News RSS (CL, español) con when:Nd. */
 function urlGoogleNews_(query, dias) {
   return 'https://news.google.com/rss/search?q=' +
          encodeURIComponent(query + ' when:' + dias + 'd') +
          '&hl=es-419&gl=CL&ceid=CL:es';
+}
+
+/** URL de búsqueda de Bing News RSS (mercado es-CL). Bing no soporta ventana temporal
+ *  nativa; la recencia la impone esReciente_ (48h). format=rss en minúscula (es sensible). */
+function urlBingNews_(query) {
+  return 'https://www.bing.com/news/search?q=' + encodeURIComponent(query) +
+         '&format=rss&setmkt=es-CL';
 }
 
 // ---------- Parseo y dedup ----------------------------------------------
@@ -306,17 +462,20 @@ function parsearItem_(item, fuente) {
 }
 
 /**
- * Deduplica por URL Y por titular normalizado. El dedup por titular es necesario porque
- * Google News devuelve URLs de redirección distintas para el MISMO artículo según el feed
- * (p.ej. las dos queries de ALTO traen la misma nota con URLs distintas). Se queda con la
- * primera aparición.
+ * Deduplica por URL Y por clave de titular. El dedup por titular es necesario porque los
+ * agregadores devuelven URLs de redirección distintas para el MISMO artículo (las dos
+ * queries de ALTO, o Google News vs Bing, traen la misma nota con URLs distintas). La clave
+ * de titular además ignora el sufijo de fuente ("Titular - El Mercurio" vs "Titular" de
+ * Bing) para que esos dupes colapsen. Se queda con la primera aparición.
+ * Nota: la dedup de "misma noticia en distintos medios con titulares distintos" la hace
+ * Claude en la curación (ver PROMPT_SISTEMA), porque acá no hay forma de detectarla por texto.
  */
 function deduplicar_(articulos) {
   var vistosUrl = {}, vistosTit = {}, unicos = [];
   for (var i = 0; i < articulos.length; i++) {
     var a = articulos[i];
     var claveUrl = normalizarUrl_(a.url);
-    var claveTit = normalizarTitulo_(a.titular);
+    var claveTit = claveTitulo_(a);
     if (vistosUrl[claveUrl] || (claveTit && vistosTit[claveTit])) continue;
     vistosUrl[claveUrl] = true;
     if (claveTit) vistosTit[claveTit] = true;
@@ -362,9 +521,19 @@ function escaparRegex_(s) {
 function normalizarUrl_(url) {
   return String(url).trim().toLowerCase().replace(/\/+$/, '');
 }
-/** Clave de dedup por titular: minúsculas, sin acentos, espacios colapsados. */
-function normalizarTitulo_(s) {
-  return normalizarTexto_(s).replace(/\s+/g, ' ').trim();
+/**
+ * Clave de dedup por titular: minúsculas, sin acentos, espacios colapsados y SIN el sufijo
+ * de atribución que Google News anexa al final ("Titular - El Mercurio"). Así el MISMO
+ * artículo vía Google News (con sufijo) y vía Bing (sin sufijo, su título no lo trae) colapsa
+ * en una sola clave. Se quita SOLO la fuente exacta del ítem (segura): no se hace un quite
+ * genérico de "lo que sigue al último guion", para no fusionar artículos realmente distintos
+ * cuyo titular contenga un guion.
+ */
+function claveTitulo_(art) {
+  var t = normalizarTexto_(String(art.titular || '')).replace(/\s+/g, ' ').trim();
+  var fuente = normalizarTexto_(String(art.fuente || '')).trim();
+  if (fuente) t = t.replace(new RegExp('\\s[-|]\\s' + escaparRegex_(fuente) + '$'), '').trim();
+  return t;
 }
 function limpiar_(texto) {
   return String(texto).replace(/\s+/g, ' ').trim();
