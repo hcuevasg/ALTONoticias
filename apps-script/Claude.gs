@@ -56,6 +56,12 @@ function testClaude() {
     var ri = b.riesgo_por_industria[r];
     Logger.log('    • %s: %s (%s)', ri.industria, ri.nivel, ri.motivo);
   }
+
+  var ap = edicion.alto_prensa || [];
+  Logger.log('◆ ALTO EN LA PRENSA: %s menciones', ap.length);
+  for (var a = 0; a < ap.length; a++) {
+    Logger.log('    • [rel %s] %s — %s', ap[a].relevancia, ap[a].titular, ap[a].fuente);
+  }
 }
 
 /**
@@ -106,7 +112,9 @@ var PROMPT_SISTEMA = [
   '   - clientes_afectados: SOLO noticias que (i) mencionan a un cliente del ROSTER y',
   '     (ii) son un INCIDENTE o AMENAZA relevante para ALTO (robo, hurto, fraude, incendio,',
   '     encerrona, robo de carga/cable/cobre, banda, etc.). DESCARTÁ marketing, aperturas,',
-  '     campañas, resultados financieros, lanzamientos. Atribuí el cliente EXACTO del roster',
+  '     REAPERTURAS, expansiones, inauguraciones, desembarcos, campañas, resultados financieros',
+  '     y lanzamientos —una reapertura o expansión NO es un incidente; NO la incluyas inventando',
+  '     un "contexto de seguridad" o "contexto de mall"—. Atribuí el cliente EXACTO del roster',
   '     (usá los alias: si dice "Líder" es Walmart, "Sodimac" es Homecenter, "Movistar" es',
   '     Telefónica). REGLA DURA: incluí un cliente SOLO si su nombre o un alias aparece',
   '     LITERALMENTE EN EL TITULAR y es el protagonista/víctima explícito del incidente. Si',
@@ -138,9 +146,13 @@ var PROMPT_SISTEMA = [
   '   De los titulares con origen "alto", INCLUÍ SOLO los que son genuinamente sobre Grupo',
   '   ALTO / ALTO S.A. / "ALTO Chile" — la empresa de prevención de pérdidas, seguridad',
   '   corporativa y "fiscalía privada". CUENTAN como ALTO: sus estudios o informes (p.ej.',
-  '   "Estudio ALTO-PUCV", reportes con la PUCV), y declaraciones de sus voceros: Jorge Nazer,',
-  '   Ángeles Kassis, y —cuando es claro que es el ejecutivo de ALTO— Eduardo Hernández y',
-  '   Rodrigo Varela. DESCARTÁ todo donde "alto" es palabra común ("alto el fuego", "alto',
+  '   "Estudio ALTO-PUCV"), y CUALQUIER mención de sus voceros/fundadores: Jorge Nazer, María de los',
+  '   Ángeles Kassis, Rodrigo Varela Anabalón y Eduardo Hernández Palma (a estos dos últimos, por',
+  '   tener nombres comunes, inclúilos cuando aparezcan con su 2º apellido —Anabalón / Palma— o',
+  '   cuando es claro que son los ejecutivos de ALTO), AUNQUE la nota sea de OTRO contexto',
+  '   —nombramientos, directorios (p.ej. Endeavor), paneles, entrevistas, premios, columnas—: si el',
+  '   titular nombra a cualquiera de ellos, ES mención de ALTO y va incluida. DESCARTÁ todo donde',
+  '   "alto" es palabra común ("alto el fuego", "alto',
   '   riesgo", "pare/alto", deportes) u otra persona/empresa homónima. Ante la duda, NO lo',
   '   incluyas. Bajada de ~30 palabras; relevancia entera 1-5. Si no hay menciones, devolvé [].',
   '',

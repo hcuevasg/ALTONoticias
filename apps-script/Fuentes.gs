@@ -53,7 +53,11 @@ var MAX_HORAS_ANTIGUEDAD = 48;
 
 // Sección "ALTO en la Prensa": menciones de Grupo ALTO. Dos queries que se complementan:
 // (1) PRECISA — frases/nombres distintivos que por sí solos identifican a la empresa.
-var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "ALTO Chile" OR "fiscalía privada" OR "Jorge Nazer" OR "Ángeles Kassis")';
+// Nazer/Kassis: apellidos distintivos, van con nombre+apellido. Varela/Hernández son nombres
+// comunes → uso el PAR de apellidos ("Varela Anabalón", "Hernández Palma"), distintivo y robusto
+// a variaciones de nombre. Las formas cortas ("Rodrigo Varela"/"Eduardo Hernández") quedan en la
+// query ANCLADA (solo junto a "ALTO") para no traer homónimos.
+var QUERY_ALTO = '("Grupo ALTO" OR "ALTO S.A." OR "ALTO Chile" OR "fiscalía privada" OR "Jorge Nazer" OR "Ángeles Kassis" OR "Varela Anabalón" OR "Hernández Palma")';
 // (2) ANCLADA — la palabra ALTO emparejada con una señal fuerte de la empresa. Los voceros
 // de nombre común (Eduardo Hernández, Rodrigo Varela) y PUCV (su socio de estudios) solo se
 // usan JUNTO a "ALTO", para no traer "alto" como palabra suelta. Captura casos como el
