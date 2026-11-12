@@ -51,7 +51,7 @@ function barridoDiario() {
 
 /** Avisa por correo si el barrido falla (best-effort). */
 function alertarFallo_(motivo) {
-  var destino = PropertiesService.getScriptProperties().getProperty('CORREO_DESTINO');
+  var destino = PropertiesService.getScriptProperties().getProperty('CORREO_ALERTAS') || PropertiesService.getScriptProperties().getProperty('CORREO_DESTINO');
   if (!destino) return;
   try {
     MailApp.sendEmail({
@@ -77,7 +77,7 @@ function avisarVencimientoPat_() {
   var dias = diasRestantesPat();
   if (dias === null || dias > DIAS_AVISO_PAT) return;
 
-  var destino = PropertiesService.getScriptProperties().getProperty('CORREO_DESTINO');
+  var destino = PropertiesService.getScriptProperties().getProperty('CORREO_ALERTAS') || PropertiesService.getScriptProperties().getProperty('CORREO_DESTINO');
   if (!destino) return;
 
   var cuando = dias <= 0 ? 'HOY' : 'en ' + dias + (dias === 1 ? ' día' : ' días');

@@ -20,7 +20,7 @@
  * dateRestrict=dN del lado de Google. Claude cura y el dedup global funde solapamientos.
  */
 
-var CSE_QUERY_ALTO = '"Grupo ALTO" OR "Jorge Nazer" OR "Ángeles Kassis" OR "ALTO Chile" OR "ALTO S.A."';
+var CSE_QUERY_ALTO = '"Grupo ALTO" OR "Jorge Nazer" OR "Ángeles Kassis" OR "ALTO Chile" OR "ALTO S.A." OR "ALTO Inmune"';
 var CSE_DIAS = 2;   // dateRestrict: últimos N días
 
 /** Verificación: cargá las propiedades y ejecutá testBusquedaWebAlto(). */
