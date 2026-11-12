@@ -22,7 +22,7 @@ function enviarCorreo(edicion) {
   }
 
   var correo = renderCorreo(edicion);   // {html, minutos, palabras}
-  var asunto = 'ALTO · Barrido de Prensa — ' + fechaLarga_(edicion.fecha) +
+  var asunto = 'ALTO · Informe de Prensa — ' + fechaLarga_(edicion.fecha) +
                '  (⏱ ~' + correo.minutos + ' min)';
 
   try {
@@ -31,7 +31,7 @@ function enviarCorreo(edicion) {
       subject: asunto,
       htmlBody: correo.html,
       body: cuerpoTextoPlano_(edicion),   // fallback para clientes sin HTML
-      name: 'ALTO · Barrido de Prensa'
+      name: 'ALTO · Informe de Prensa'
     });
   } catch (e) {
     Logger.log('✗ Falló el envío: %s', e.message);
@@ -48,7 +48,7 @@ function cuerpoTextoPlano_(edicion) {
   var tp = edicion.titular_principal;
   var url = BASE_PAGES + '/ediciones/' + edicion.fecha + '.html';
   return [
-    'ALTO · Barrido de Prensa — ' + fechaLarga_(edicion.fecha),
+    'ALTO · Informe de Prensa — ' + fechaLarga_(edicion.fecha),
     '',
     'Titular principal: ' + tp.titular,
     tp.bajada,

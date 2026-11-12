@@ -16,6 +16,46 @@ var GITHUB_API    = 'https://api.github.com';
 var GITHUB_BRANCH = 'main';
 var DOCS_DIR      = 'docs';
 
+// Estado de la última corrida (para los avisos por correo de Codigo.gs).
+var ultimoErrorGitHub_  = '';    // último error HTTP de la API, ej. "PUT docs/… → HTTP 401: …"
+var patVencimientoRaw_  = null;  // header github-authentication-token-expiration del PAT
+
+/** Detalle del último error de la API, listo para anexar al correo de fallo. */
+function detalleErrorGitHub() {
+  if (!ultimoErrorGitHub_) return '';
+  var pista = ultimoErrorGitHub_.indexOf('HTTP 401') !== -1
+    ? '\n\nPista: HTTP 401 suele ser GITHUB_PAT vencido o revocado. Regenerá el token ' +
+      '(fine-grained, Contents RW sobre el repo) y actualizá GITHUB_PAT en Propiedades del Script.'
+    : '';
+  return '\n\nDetalle: ' + ultimoErrorGitHub_ + pista;
+}
+
+/** Guarda la expiración del PAT que GitHub devuelve en cada response autenticado. */
+function capturarVencimientoPat_(resp) {
+  try {
+    var headers = resp.getAllHeaders();
+    for (var k in headers) {
+      if (String(k).toLowerCase() === 'github-authentication-token-expiration') {
+        patVencimientoRaw_ = String(headers[k]);
+        return;
+      }
+    }
+  } catch (e) { /* best-effort */ }
+}
+
+/**
+ * Días que le quedan al GITHUB_PAT según el último response de la API.
+ * @return {?number} días restantes (0 = vence hoy), o null si no se pudo saber.
+ */
+function diasRestantesPat() {
+  if (!patVencimientoRaw_) return null;
+  // Formatos vistos: "2026-08-06 03:00:00 UTC" e ISO "2026-08-06T03:00:00Z".
+  var m = String(patVencimientoRaw_).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  var exp = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  return Math.floor((exp - Date.now()) / 86400000);
+}
+
 /**
  * Publica una edición completa. Escribe index.html, la edición fechada y
  * actualiza indice.json. Devuelve un resumen o null si algo falla.
@@ -23,11 +63,13 @@ var DOCS_DIR      = 'docs';
  * @param {string} htmlEdicion  HTML completo (de renderEdicion()).
  */
 function publicarEdicion(edicion, htmlEdicion) {
+  ultimoErrorGitHub_ = '';
   var props = PropertiesService.getScriptProperties();
   var pat  = props.getProperty('GITHUB_PAT');
   var repo = props.getProperty('GITHUB_REPO');
   if (!pat || !repo) {
-    Logger.log('✗ Faltan GITHUB_PAT y/o GITHUB_REPO en Propiedades del Script.');
+    ultimoErrorGitHub_ = 'Faltan GITHUB_PAT y/o GITHUB_REPO en Propiedades del Script.';
+    Logger.log('✗ %s', ultimoErrorGitHub_);
     return null;
   }
 
@@ -106,10 +148,12 @@ function obtenerArchivo_(repo, pat, ruta) {
     headers: cabecerasGitHub_(pat)
   });
 
+  capturarVencimientoPat_(resp);
   var codigo = resp.getResponseCode();
   if (codigo === 404) return null;
   if (codigo !== 200) {
-    Logger.log('✗ GET %s → HTTP %s: %s', ruta, codigo, resp.getContentText().slice(0, 300));
+    ultimoErrorGitHub_ = 'GET ' + ruta + ' → HTTP ' + codigo + ': ' + resp.getContentText().slice(0, 300);
+    Logger.log('✗ %s', ultimoErrorGitHub_);
     return null;
   }
 
@@ -149,9 +193,11 @@ function escribirArchivo_(repo, pat, ruta, contenido, mensaje, sha) {
     payload: JSON.stringify(payload)
   });
 
+  capturarVencimientoPat_(resp);
   var codigo = resp.getResponseCode();
   if (codigo === 200 || codigo === 201) return true;
-  Logger.log('✗ PUT %s → HTTP %s: %s', ruta, codigo, resp.getContentText().slice(0, 400));
+  ultimoErrorGitHub_ = 'PUT ' + ruta + ' → HTTP ' + codigo + ': ' + resp.getContentText().slice(0, 400);
+  Logger.log('✗ %s', ultimoErrorGitHub_);
   return false;
 }
 
@@ -191,4 +237,7 @@ function testPublicar() {
   Logger.log('   Hoy:     %s', res.hoy);
   Logger.log('   Edición: %s', res.edicion);
   Logger.log('   Archivo: %s', res.archivo);
+
+  var dias = diasRestantesPat();
+  Logger.log('   PAT: %s', dias === null ? 'sin dato de vencimiento' : dias + ' días restantes');
 }

@@ -18,6 +18,8 @@ var LOGO_URL   = BASE_PAGES + '/assets/alto-logo.png';
 
 var C_RED = '#E84244', C_BLUE = '#4174B9', C_GREY = '#B0B6B8';
 var C_INK = '#15181D', C_INK2 = '#4A4F57', C_INK3 = '#7C828B', C_LINE = '#E1DDD4';
+// Paleta "Informe de Prensa" (correo): azul marino institucional + apoyos.
+var C_NAVY = '#1B3452', C_NAVYSOFT = '#B9C4D6', C_BODY = '#5C6470', C_META = '#8A93A0';
 var F_DISP = "Archivo,'Helvetica Neue',Arial,sans-serif";
 var F_MONO = "'IBM Plex Sans',Arial,sans-serif";
 var F_BODY = "'IBM Plex Sans',Arial,sans-serif";
@@ -159,7 +161,9 @@ function chipClaseRiesgo_(nivel) {
 }
 
 // ======================================================================
-//  CORREO (digest topado, estilos inline)
+//  CORREO — "Informe de Prensa" (digest topado, estilos inline)
+//  Diseño: header azul marino + secciones numeradas con pastilla +
+//  titular en bold corrido con la bajada + fuente roja/fecha + lema footer.
 // ======================================================================
 
 function renderCorreo(edicion) {
@@ -207,102 +211,125 @@ function renderCorreo(edicion) {
 function construirHtmlCorreo_(edicion, seccionesCorreo, boletin, altoItems, minutos, edicionUrl) {
   var tp = edicion.titular_principal;
   var cuerpo = [];
+  var numero = 1;
 
-  // I · ALTO en la Prensa.
-  cuerpo.push(altoCorreoHtml_(altoItems));
+  // 1 · ALTO en la Prensa.
+  cuerpo.push(altoCorreoHtml_(altoItems, numero++));
 
-  // II · Inteligencia — Monitoreo de Clientes.
-  cuerpo.push(renderInteligenciaCorreo_(boletin));
+  // 2 · Clientes ALTO (riesgo + clientes afectados).
+  cuerpo.push(renderInteligenciaCorreo_(boletin, numero++));
 
-  // III · Barrido de Prensa (el titular encabeza el bloque).
-  cuerpo.push(
-    '<div style="padding-top:13px;margin-bottom:6px;border-top:1.5px solid ' + C_INK + ';">' +
-      '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_RED + ';font-weight:bold;margin-bottom:9px;">III · Barrido de Prensa</div>' +
-      '<a href="' + escaparHtml_(tp.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
-        '<div style="font-family:' + F_DISP + ';font-size:27px;font-weight:800;line-height:1.04;letter-spacing:-.02em;">' + escaparHtml_(tp.titular) + '</div>' +
+  // 3+ · Barrido: el titular principal abre como destacado la primera sección.
+  var heroHtml = (tp && tp.url) ?
+    '<div style="margin-bottom:22px;">' +
+      '<a href="' + escaparHtml_(tp.url) + '" style="color:' + C_NAVY + ';text-decoration:none;">' +
+        '<div style="font-family:' + F_DISP + ';font-size:21px;font-weight:800;line-height:1.15;letter-spacing:-.01em;color:' + C_NAVY + ';">' + escaparHtml_(tp.titular) + '</div>' +
       '</a>' +
-      '<div style="font-family:' + F_BODY + ';font-size:15px;line-height:1.45;color:' + C_INK2 + ';margin-top:9px;">' + escaparHtml_(tp.bajada) + '</div>' +
-      '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;letter-spacing:.1em;margin-top:9px;">' + escaparHtml_(tp.fuente) + (tp.fecha ? ' <span style="color:' + C_INK3 + ';">· ' + escaparHtml_(tp.fecha) + '</span>' : '') + '</div>' +
-    '</div>'
-  );
+      '<div style="font-family:' + F_BODY + ';font-size:14px;line-height:1.5;color:' + C_BODY + ';margin-top:7px;">' + escaparHtml_(tp.bajada) + '</div>' +
+      fuenteMetaCorreo_(tp.fuente, tp.fecha) +
+    '</div>' : '';
 
-  seccionesCorreo.forEach(function (sec) {
-    var num = NUM_SECCION[sec.id] ? (NUM_SECCION[sec.id] + ' · ') : '';
-    cuerpo.push(seclblCorreo_(num + sec.titulo));
+  if (!seccionesCorreo.length && heroHtml) {
+    cuerpo.push(seclblCorreo_(numero++, 'Actualidad Chile'));
+    cuerpo.push(heroHtml);
+  }
+
+  seccionesCorreo.forEach(function (sec, i) {
+    cuerpo.push(seclblCorreo_(numero++, sec.titulo));
+    if (i === 0 && heroHtml) cuerpo.push(heroHtml);
     sec.arts.forEach(function (item) {
-      cuerpo.push(
-        '<div style="margin-bottom:15px;">' +
-          '<a href="' + escaparHtml_(item.art.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
-            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;">' + escaparHtml_(item.art.titular) + '</div>' +
-          '</a>' +
-          '<div style="font-family:' + F_BODY + ';font-size:13.5px;color:' + C_INK2 + ';margin-top:4px;line-height:1.4;">' + escaparHtml_(item.bajada) + '</div>' +
-          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + (item.art.fecha ? ' <span style="color:' + C_INK3 + ';font-weight:400;">· ' + escaparHtml_(item.art.fecha) + '</span>' : '') + '</div>' +
-        '</div>'
-      );
+      cuerpo.push(articuloCorreoHtml_(item.art, item.bajada));
     });
     if (sec.id === 'delictual') cuerpo.push(moCorreoHtml_(boletin.modus));
   });
 
   return [
-    '<div style="background:#E7E3DB;padding:26px 0;margin:0;">',
+    '<div style="background:#EEF1F5;padding:26px 0;margin:0;">',
     '<table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center">',
-    '<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#ffffff;">',
-    '<tr><td style="background:' + C_INK + ';padding:22px 30px;">',
+    '<table width="640" cellpadding="0" cellspacing="0" role="presentation" style="max-width:640px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;">',
+    '<tr><td style="background:' + C_NAVY + ';padding:24px 30px;border-radius:10px 10px 0 0;">',
     '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
-    '    <td align="left" style="vertical-align:middle;"><span style="background:#fff;border-radius:4px;padding:9px 13px;display:inline-block;"><img src="' + LOGO_URL + '" alt="ALTO" height="24" style="height:24px;width:auto;display:block;"></span></td>',
-    '    <td align="right" style="vertical-align:middle;font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;line-height:1.7;">Inteligencia & Prensa<br><b style="font-weight:600;">Edición · ' + escaparHtml_(edicion.fecha) + '</b><br>⏱ Lectura ~' + minutos + ' min</td>',
+    '    <td align="left" style="vertical-align:middle;">',
+    '      <div style="font-family:' + F_DISP + ';font-size:25px;font-weight:900;letter-spacing:.01em;line-height:1;color:#ffffff;">INFORME DE PRENSA</div>',
+    '      <div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + C_NAVYSOFT + ';margin-top:8px;">Edici&oacute;n &ndash; ' + escaparHtml_(fechaBarra_(edicion.fecha)) + ' &nbsp;&middot;&nbsp; &#9201; Lectura ~' + minutos + ' min</div>',
+    '    </td>',
+    '    <td align="right" style="vertical-align:middle;white-space:nowrap;">',
+    '      <span style="background:#ffffff;border-radius:6px;padding:8px 12px;display:inline-block;vertical-align:middle;"><img src="' + LOGO_URL + '" alt="ALTO" height="22" style="height:22px;width:auto;display:block;"></span>',
+    '      <span style="display:inline-block;vertical-align:middle;width:1px;height:26px;background:#4A5F7E;margin:0 12px;"></span>',
+    '      <span style="font-size:15px;vertical-align:middle;letter-spacing:2px;">🇨🇱🇨🇴🇺🇸🇲🇽</span>',
+    '    </td>',
     '  </tr></table>',
     '</td></tr>',
-    '<tr><td style="padding:28px 30px 8px;">',
+    '<tr><td style="padding:16px 34px 8px;">',
     cuerpo.join('\n'),
     '</td></tr>',
-    '<tr><td style="padding:14px 30px 30px;">',
-    '  <a href="' + escaparHtml_(edicionUrl) + '" style="display:inline-block;background:' + C_RED + ';color:#ffffff;font-family:' + F_MONO + ';font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:13px 22px;">Ver edición completa y archivo →</a>',
+    '<tr><td align="center" style="padding:16px 34px 4px;">',
+    '  <a href="' + escaparHtml_(edicionUrl) + '" style="display:inline-block;background:' + C_RED + ';color:#ffffff;font-family:' + F_DISP + ';font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;padding:12px 26px;border-radius:22px;">Ver edici&oacute;n completa y archivo &rarr;</a>',
     '</td></tr>',
-    '<tr><td style="background:' + C_INK + ';padding:16px 30px;">',
-    '  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>',
-    '    <td align="left" style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fff;"><b style="color:' + C_RED + ';">ALTO</b> · Barrido de Prensa</td>',
-    '    <td align="right" style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:' + C_GREY + ';">Uso interno</td>',
-    '  </tr></table>',
+    '<tr><td align="center" style="padding:18px 34px 10px;">',
+    '  <div style="display:inline-block;background:' + C_NAVY + ';color:#ffffff;font-family:' + F_BODY + ';font-size:13px;padding:13px 34px;border-radius:24px;">Creando juntos comunidades <b>m&aacute;s seguras</b></div>',
     '</td></tr>',
+    '<tr><td align="center" style="padding:0 34px 26px;font-family:' + F_MONO + ';font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:' + C_META + ';">ALTO &middot; Informe de Prensa &middot; Uso interno</td></tr>',
     '</table></td></tr></table></div>'
   ].join('\n');
 }
 
-/** I · Inteligencia — Monitoreo de Clientes (correo): riesgo + clientes. */
-function renderInteligenciaCorreo_(boletin) {
-  var b = [seclblCorreo_('II · Inteligencia — Monitoreo de Clientes')];
+/** Artículo del correo: titular en bold corrido con la bajada + fuente/fecha. */
+function articuloCorreoHtml_(art, bajada) {
+  return '<div style="margin-bottom:19px;">' +
+    '<div style="font-family:' + F_BODY + ';font-size:13.5px;line-height:1.5;color:' + C_BODY + ';">' +
+      '<a href="' + escaparHtml_(art.url) + '" style="text-decoration:none;">' +
+        '<span style="font-family:' + F_DISP + ';font-weight:800;color:' + C_NAVY + ';">' + escaparHtml_(conPunto_(art.titular)) + '</span>' +
+      '</a> ' + escaparHtml_(bajada) +
+    '</div>' +
+    fuenteMetaCorreo_(art.fuente, art.fecha) +
+  '</div>';
+}
+
+/** Línea de fuente: FUENTE en rojo • fecha DD | MM | YYYY en azul marino. */
+function fuenteMetaCorreo_(fuente, fecha) {
+  var b = '<div style="font-family:' + F_MONO + ';font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-top:6px;">' +
+    '<span style="color:' + C_RED + ';">' + escaparHtml_(fuente) + '</span>';
+  if (fecha) {
+    b += '<span style="color:' + C_META + ';font-weight:400;"> &nbsp;&bull;&nbsp; </span>' +
+         '<span style="color:' + C_NAVY + ';font-weight:600;">' + escaparHtml_(fechaBarra_(fecha)) + '</span>';
+  }
+  return b + '</div>';
+}
+
+/** 2 · Clientes ALTO (correo): riesgo + clientes afectados. */
+function renderInteligenciaCorreo_(boletin, numero) {
+  var b = [seclblCorreo_(numero, 'Clientes ALTO')];
 
   if (boletin.riesgo.length) {
     var chips = boletin.riesgo.map(function (r) {
       var c = colorRiesgo_(r.nivel);
       return '<span style="display:inline-block;background:' + c.bg + ';color:' + c.fg +
-        ';font-family:' + F_MONO + ';font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;margin:0 6px 7px 0;">' +
+        ';font-family:' + F_MONO + ';font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;margin:0 6px 7px 0;border-radius:11px;">' +
         escaparHtml_(r.industria) + ' · ' + escaparHtml_(r.nivel) + '</span>';
     }).join('');
-    b.push('<div style="margin-bottom:20px;">' + chips + '</div>');
+    b.push('<div style="margin-bottom:18px;">' + chips + '</div>');
   }
 
   if (boletin.clientes.length) {
-    b.push(subLabelCorreo_('Clientes afectados · últimas 48 h (' + boletin.clientes.length + ')'));
     boletin.clientes.forEach(function (c) {
-      var enc = escaparHtml_(c.cliente);
-      if (c.industria) enc += ' · ' + escaparHtml_(c.industria);
-      if (c.tipo_amenaza) enc += ' · ' + escaparHtml_(c.tipo_amenaza);
-      if (c.fecha) enc += ' · ' + escaparHtml_(c.fecha);
+      var enc = c.cliente || '';
+      if (c.industria) enc += ' · ' + c.industria;
+      if (c.tipo_amenaza) enc += ' · ' + c.tipo_amenaza;
       b.push(
-        '<div style="border-left:3px solid ' + C_RED + ';padding-left:13px;margin-bottom:18px;">' +
-          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_RED + ';text-transform:uppercase;font-weight:bold;letter-spacing:.08em;">' + enc + '</div>' +
-          '<a href="' + escaparHtml_(c.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
-            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;margin-top:4px;">' + escaparHtml_(c.titular) + '</div>' +
-          '</a>' +
-          (c.impacto ? '<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_INK2 + ';margin-top:5px;line-height:1.4;">' + escaparHtml_(c.impacto) + '</div>' : '') +
-          (c.oportunidad_comercial ? '<div style="background:#EEF3FB;border-left:2px solid ' + C_BLUE + ';padding:9px 12px;margin-top:8px;font-family:' + F_BODY + ';font-size:12.5px;color:' + C_INK + ';line-height:1.4;"><b style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:' + C_BLUE + ';">Oportunidad comercial</b><br>' + escaparHtml_(c.oportunidad_comercial) + '</div>' : '') +
+        '<div style="margin-bottom:19px;">' +
+          '<div style="font-family:' + F_BODY + ';font-size:13.5px;line-height:1.5;color:' + C_BODY + ';">' +
+            '<a href="' + escaparHtml_(c.url) + '" style="text-decoration:none;">' +
+              '<span style="font-family:' + F_DISP + ';font-weight:800;color:' + C_NAVY + ';">' + escaparHtml_(conPunto_(c.titular)) + '</span>' +
+            '</a>' + (c.impacto ? ' ' + escaparHtml_(c.impacto) : '') +
+          '</div>' +
+          fuenteMetaCorreo_(enc, c.fecha) +
+          (c.oportunidad_comercial ? '<div style="background:#EEF2F8;border-left:3px solid ' + C_NAVY + ';padding:10px 14px;margin-top:9px;font-family:' + F_BODY + ';font-size:12.5px;color:' + C_INK + ';line-height:1.45;border-radius:0 8px 8px 0;"><b style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:' + C_NAVY + ';">Oportunidad comercial</b><br>' + escaparHtml_(c.oportunidad_comercial) + '</div>' : '') +
         '</div>'
       );
     });
   } else {
-    b.push('<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_INK3 + ';font-style:italic;margin-bottom:6px;">Sin novedades de clientes en las últimas 48 h.</div>');
+    b.push('<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_META + ';font-style:italic;margin-bottom:6px;">Sin novedades de clientes en las últimas 48 h.</div>');
   }
 
   return b.join('\n');
@@ -314,48 +341,41 @@ function moCorreoHtml_(modus) {
   var b = [subLabelCorreo_('Nuevos modus operandi')];
   modus.forEach(function (m) {
     b.push(
-      '<div style="margin-bottom:10px;padding-left:16px;position:relative;font-family:' + F_BODY + ';font-size:13.5px;line-height:1.42;color:' + C_INK + ';">' +
-        '<span style="display:inline-block;width:6px;height:6px;background:' + C_RED + ';position:absolute;left:0;top:7px;"></span>' +
-        '<a href="' + escaparHtml_(m.url) + '" style="color:' + C_INK + ';text-decoration:none;">' + escaparHtml_(m.descripcion) + '</a>' +
-        (m.fecha ? ' <span style="font-family:' + F_MONO + ';font-size:10px;color:' + C_INK3 + ';">· ' + escaparHtml_(m.fecha) + '</span>' : '') +
+      '<div style="margin-bottom:10px;padding-left:16px;position:relative;font-family:' + F_BODY + ';font-size:13.5px;line-height:1.45;color:' + C_BODY + ';">' +
+        '<span style="display:inline-block;width:6px;height:6px;background:' + C_RED + ';border-radius:3px;position:absolute;left:0;top:7px;"></span>' +
+        '<a href="' + escaparHtml_(m.url) + '" style="color:' + C_NAVY + ';text-decoration:none;font-weight:600;">' + escaparHtml_(m.descripcion) + '</a>' +
+        (m.fecha ? ' <span style="font-family:' + F_MONO + ';font-size:10px;color:' + C_META + ';">&bull; ' + escaparHtml_(fechaBarra_(m.fecha)) + '</span>' : '') +
       '</div>'
     );
   });
   return b.join('\n');
 }
 
-/** III · ALTO en la Prensa (correo): titulares estilo prensa o nota de vacío. */
-function altoCorreoHtml_(altoItems) {
-  var b = [seclblCorreo_('I · ALTO en la Prensa')];
+/** 1 · ALTO en la Prensa (correo): titulares estilo prensa o nota de vacío. */
+function altoCorreoHtml_(altoItems, numero) {
+  var b = [seclblCorreo_(numero, 'ALTO en la Prensa')];
   if (altoItems && altoItems.length) {
     altoItems.forEach(function (item) {
-      b.push(
-        '<div style="margin-bottom:15px;">' +
-          '<a href="' + escaparHtml_(item.art.url) + '" style="color:' + C_INK + ';text-decoration:none;">' +
-            '<div style="font-family:' + F_DISP + ';font-size:16px;font-weight:700;line-height:1.22;">' + escaparHtml_(item.art.titular) + '</div>' +
-          '</a>' +
-          '<div style="font-family:' + F_BODY + ';font-size:13.5px;color:' + C_INK2 + ';margin-top:4px;line-height:1.4;">' + escaparHtml_(item.bajada) + '</div>' +
-          '<div style="font-family:' + F_MONO + ';font-size:10px;color:' + C_BLUE + ';margin-top:5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">' + escaparHtml_(item.art.fuente) + (item.art.fecha ? ' <span style="color:' + C_INK3 + ';font-weight:400;">· ' + escaparHtml_(item.art.fecha) + '</span>' : '') + '</div>' +
-        '</div>'
-      );
+      b.push(articuloCorreoHtml_(item.art, item.bajada));
     });
   } else {
-    b.push('<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_INK3 + ';font-style:italic;margin-bottom:6px;">Sin menciones de ALTO en las últimas 48 h.</div>');
+    b.push('<div style="font-family:' + F_BODY + ';font-size:13px;color:' + C_META + ';font-style:italic;margin-bottom:6px;">Sin menciones de ALTO en las últimas 48 h.</div>');
   }
   return b.join('\n');
 }
 
-function seclblCorreo_(texto) {
-  return '<div style="font-family:' + F_MONO + ';font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + C_RED +
-    ';font-weight:bold;margin:26px 0 14px;border-top:1.5px solid ' + C_INK + ';padding-top:13px;">' +
-    '<span style="display:inline-block;width:16px;height:2px;background:' + C_RED + ';vertical-align:middle;margin-right:8px;"></span>' +
-    escaparHtml_(texto) + '</div>';
+/** Cabecera de sección: línea + pastilla azul con número + título en mayúsculas. */
+function seclblCorreo_(numero, texto) {
+  return '<div style="margin:26px 0 16px;">' +
+    '<span style="display:inline-block;width:20px;height:3px;background:' + C_NAVY + ';vertical-align:middle;"></span>' +
+    '<span style="display:inline-block;background:' + C_NAVY + ';color:#ffffff;font-family:' + F_DISP + ';font-size:12px;font-weight:700;line-height:1;padding:5px 11px;border-radius:11px;vertical-align:middle;margin-right:11px;">' + escaparHtml_(String(numero)) + '</span>' +
+    '<span style="font-family:' + F_DISP + ';font-size:17px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:' + C_NAVY + ';vertical-align:middle;">' + escaparHtml_(texto) + '</span>' +
+  '</div>';
 }
-function headingCorreo_(texto) { return seclblCorreo_(texto); }
 
 function subLabelCorreo_(texto) {
-  return '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:' + C_INK2 +
-    ';font-weight:600;margin:6px 0 13px;">' + escaparHtml_(texto) + '</div>';
+  return '<div style="font-family:' + F_MONO + ';font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:' + C_NAVY +
+    ';font-weight:700;margin:6px 0 13px;">' + escaparHtml_(texto) + '</div>';
 }
 
 function colorRiesgo_(nivel) {
@@ -386,6 +406,10 @@ function testRender() {
 
   var correo = renderCorreo(edicion);
   Logger.log('— Correo: %s caracteres · %s palabras · ⏱ ~%s min', correo.html.length, correo.palabras, correo.minutos);
+  afirmar_('header Informe de Prensa', correo.html.indexOf('INFORME DE PRENSA') !== -1);
+  afirmar_('sección ALTO en la Prensa', correo.html.indexOf('ALTO en la Prensa') !== -1);
+  afirmar_('sección Clientes ALTO', correo.html.indexOf('Clientes ALTO') !== -1);
+  afirmar_('lema en footer', correo.html.indexOf('Creando juntos comunidades') !== -1);
   Logger.log('----- INICIO HTML CORREO -----');
   Logger.log(correo.html);
   Logger.log('----- FIN HTML CORREO -----');
@@ -407,6 +431,19 @@ function escaparHtml_(texto) {
 function puntosRelevancia_(rel) {
   var n = Math.max(1, Math.min(5, parseInt(rel, 10) || 1));
   return new Array(n + 1).join('●') + new Array(5 - n + 1).join('○');
+}
+
+/** 'YYYY-MM-DD' → 'DD | MM | YYYY' (formato del encabezado del Informe). */
+function fechaBarra_(iso) {
+  var p = String(iso || '').split('-');
+  if (p.length !== 3) return String(iso || '');
+  return p[2] + ' | ' + p[1] + ' | ' + p[0];
+}
+
+/** Asegura punto final en el titular (estilo run-in del Informe). */
+function conPunto_(texto) {
+  var t = String(texto || '').trim();
+  return /[.!?…:"»”]$/.test(t) ? t : t + '.';
 }
 
 function contarPalabras_(texto) {

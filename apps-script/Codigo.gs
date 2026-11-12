@@ -32,13 +32,14 @@ function barridoDiario() {
 
     var html = renderEdicion(edicion);                     // Fase 3
     var res = publicarEdicion(edicion, html);              // Fase 4
-    if (!res) throw new Error('No se pudo publicar en GitHub Pages.');
+    if (!res) throw new Error('No se pudo publicar en GitHub Pages.' + detalleErrorGitHub());
     Logger.log('Publicado: %s', res.edicion);
 
     if (!enviarCorreo(edicion)) throw new Error('No se pudo enviar el correo.'); // Fase 5
 
     registrarPublicados_(edicion);     // Mejora #1: recordar lo ya reportado
     registrarOportunidades_(edicion);  // Mejora #6: volcar oportunidades al Sheet
+    avisarVencimientoPat_();           // Mejora #7: alerta si el GITHUB_PAT está por vencer
 
     var seg = Math.round((new Date() - inicio) / 1000);
     Logger.log('✓ Barrido completado en %s s.', seg);
@@ -55,13 +56,53 @@ function alertarFallo_(motivo) {
   try {
     MailApp.sendEmail({
       to: destino,
-      subject: 'ALTO · Barrido de Prensa — FALLÓ la edición de hoy',
+      subject: 'ALTO · Informe de Prensa — FALLÓ la edición de hoy',
       body: 'El barrido diario no pudo completarse.\n\nMotivo: ' + motivo +
             '\n\nRevisá el registro de ejecución en Apps Script.',
-      name: 'ALTO · Barrido de Prensa'
+      name: 'ALTO · Informe de Prensa'
     });
   } catch (e) {
     Logger.log('  (no se pudo enviar el aviso de fallo: %s)', e.message);
+  }
+}
+
+/**
+ * Mejora #7: si al GITHUB_PAT le quedan ≤ DIAS_AVISO_PAT días, avisa por correo
+ * (best-effort). La expiración sale del header que GitHub devuelve en cada
+ * request autenticado, capturado durante la publicación de hoy.
+ */
+var DIAS_AVISO_PAT = 7;
+
+function avisarVencimientoPat_() {
+  var dias = diasRestantesPat();
+  if (dias === null || dias > DIAS_AVISO_PAT) return;
+
+  var destino = PropertiesService.getScriptProperties().getProperty('CORREO_DESTINO');
+  if (!destino) return;
+
+  var cuando = dias <= 0 ? 'HOY' : 'en ' + dias + (dias === 1 ? ' día' : ' días');
+  try {
+    MailApp.sendEmail({
+      to: destino,
+      subject: '⚠ ALTO · El token de GitHub vence ' + cuando,
+      body: [
+        'El GITHUB_PAT que publica el Informe de Prensa en GitHub Pages vence ' + cuando + '.',
+        '',
+        'Si vence, el barrido diario dejará de publicarse (y no saldrá el correo).',
+        '',
+        'Para renovarlo:',
+        '1. GitHub (cuenta hcuevasg) → Settings → Developer settings → Fine-grained tokens.',
+        '2. Regenerá el token del repo hcuevasg/ALTONoticias con permiso Contents: Read and write.',
+        '   Elegí una expiración larga (fecha custom).',
+        '3. Apps Script → Configuración del proyecto → Propiedades del script → actualizá GITHUB_PAT.',
+        '',
+        'Este aviso se repite con cada barrido hasta que renueves el token.'
+      ].join('\n'),
+      name: 'ALTO · Informe de Prensa'
+    });
+    Logger.log('⚠ Aviso de vencimiento del PAT enviado (%s días restantes).', dias);
+  } catch (e) {
+    Logger.log('  (no se pudo enviar el aviso de vencimiento: %s)', e.message);
   }
 }
 
